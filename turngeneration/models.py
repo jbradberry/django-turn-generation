@@ -2,7 +2,10 @@ from django.contrib.contenttypes import generic
 from django.utils import timezone
 from django.db import models
 
+from celery import current_app as celery
 import datetime
+
+from .tasks import trigger_generation
 
 
 class GenerationTime(models.Model):
@@ -11,11 +14,12 @@ class GenerationTime(models.Model):
     content_object = generic.GenericForeignKey()
 
     generation_time = models.DateTimeField(null=True)
+    task_id = models.TextField()
 
     class Meta:
         unique_together = ('content_type', 'object_id')
 
-    def update_time(self, last_generation):
+    def next_time(self, last_generation=None):
         tz = timezone.get_current_timezone()
 
         next_datetimes = []
@@ -60,8 +64,19 @@ class GenerationTime(models.Model):
         if next_datetimes:
             next_gen = next_datetimes[0]
 
+        return next_gen
+
+    def update_time(self, last_generation=None):
+        if self.task_id:
+            celery.control.revoke(self.task_id)
+
+        next_gen = self.next_time(last_generation)
+        request = trigger_generation.apply_async((self.pk,), eta=next_gen)
+
         self.generation_time = next_gen
+        self.task_id = request.id
         self.save()
+
 
 
 class GenerationRule(models.Model):

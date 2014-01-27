@@ -10,3 +10,4 @@ Requirements
 
 - Python >= 2.6
 - Django >= 1.4
+- Celery >= 3.1
