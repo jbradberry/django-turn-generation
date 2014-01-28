@@ -30,7 +30,7 @@ class GenerationTime(models.Model):
                 last_generation = timezone.now()
 
             base_time = last_generation.replace()
-            if rule.timedelta is not None:
+            if rule.at_least is not None:
                 base_time += datetime.timedelta(minutes=rule.at_least)
 
             # Drop down to naive datetimes for the remainder of our
@@ -43,7 +43,7 @@ class GenerationTime(models.Model):
 
             if rule.time is not None:
                 if rule.time < next_gen.time():
-                    next_gen += timedelta(days=1)
+                    next_gen += datetime.timedelta(days=1)
                 next_gen = next_gen.replace(hour=rule.time.hour,
                                             minute=rule.time.minute)
 
@@ -99,6 +99,7 @@ class GenerationRule(models.Model):
     generator = models.ForeignKey(GenerationTime, related_name='rules')
     active = models.BooleanField(default=True)
 
+    # some number of minutes that must pass between generations
     at_least = models.PositiveIntegerField(null=True, blank=True)
     weekday = models.PositiveIntegerField(choices=WEEKDAYS,
                                           null=True, blank=True)
