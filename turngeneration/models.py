@@ -105,3 +105,10 @@ class GenerationRule(models.Model):
                                           null=True, blank=True)
     date = models.DateField(null=True, blank=True)
     time = models.TimeField(null=True, blank=True)
+
+
+class Pause(models.Model):
+    generator = models.ForeignKey(GenerationTime, related_name='pauses')
+    user = models.ForeignKey("auth.User", related_name='turngeneration_pauses')
+    timestamp = models.DateTimeField()
+    reason = models.TextField()
