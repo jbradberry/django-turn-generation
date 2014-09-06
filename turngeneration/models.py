@@ -108,7 +108,10 @@ class GenerationRule(models.Model):
 
 
 class Pause(models.Model):
+    content_type = models.ForeignKey("contenttypes.ContentType")
+    object_id = models.PositiveIntegerField()
+    owner = generic.GenericForeignKey()
+
     generator = models.ForeignKey(GenerationTime, related_name='pauses')
-    user = models.ForeignKey("auth.User", related_name='turngeneration_pauses')
     timestamp = models.DateTimeField()
     reason = models.TextField()
