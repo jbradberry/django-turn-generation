@@ -16,6 +16,9 @@ class GenerationTime(models.Model):
     generation_time = models.DateTimeField(null=True)
     task_id = models.TextField()
 
+    autogenerate = models.BooleanField(default=True, blank=True)
+    allow_pauses = models.BooleanField(default=True, blank=True)
+
     class Meta:
         unique_together = ('content_type', 'object_id')
 
