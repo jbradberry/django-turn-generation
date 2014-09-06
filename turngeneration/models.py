@@ -115,3 +115,12 @@ class Pause(models.Model):
     generator = models.ForeignKey(GenerationTime, related_name='pauses')
     timestamp = models.DateTimeField()
     reason = models.TextField()
+
+
+class Ready(models.Model):
+    content_type = models.ForeignKey("contenttypes.ContentType")
+    object_id = models.PositiveIntegerField()
+    owner = generic.GenericForeignKey()
+
+    generator = models.ForeignKey(GenerationTime, related_name='readies')
+    timestamp = models.DateTimeField()
