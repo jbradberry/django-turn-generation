@@ -116,7 +116,7 @@ class Pause(models.Model):
     owner = generic.GenericForeignKey()
 
     generator = models.ForeignKey(GenerationTime, related_name='pauses')
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now=True)
     reason = models.TextField()
 
 

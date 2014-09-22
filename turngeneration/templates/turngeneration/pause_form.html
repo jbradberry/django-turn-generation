@@ -1,0 +1,12 @@
+{% extends "turngeneration/base.html" %}
+
+{% block title %}Pause | {{ block.super }}{% endblock %}
+
+{% block header %}<h1>Pause</h1>{% endblock %}
+
+{% block content %}
+  <form method="post" action="">{% csrf_token %}
+  {{ form.as_p }}
+  <input type="submit" value="Submit" />
+  </form>
+{% endblock %}
