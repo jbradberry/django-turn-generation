@@ -18,6 +18,8 @@ class GenerationTime(models.Model):
 
     autogenerate = models.BooleanField(default=True, blank=True)
     allow_pauses = models.BooleanField(default=True, blank=True)
+    minimum_between_generations = models.PositiveIntegerField(
+        null=True, blank=True)
 
     class Meta:
         unique_together = ('content_type', 'object_id')
