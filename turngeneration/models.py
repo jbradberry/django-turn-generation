@@ -82,34 +82,6 @@ class GenerationTime(models.Model):
 
 
 
-class GenerationRule(models.Model):
-    MONDAY = 0
-    TUESDAY = 1
-    WEDNESDAY = 2
-    THURSDAY = 3
-    FRIDAY = 4
-    SATURDAY = 5
-    SUNDAY = 6
-
-    WEEKDAYS = ((MONDAY, "Monday"),
-                (TUESDAY, "Tuesday"),
-                (WEDNESDAY, "Wednesday"),
-                (THURSDAY, "Thursday"),
-                (FRIDAY, "Friday"),
-                (SATURDAY, "Saturday"),
-                (SUNDAY, "Sunday"))
-
-    generator = models.ForeignKey(GenerationTime, related_name='rules')
-    active = models.BooleanField(default=True)
-
-    # some number of minutes that must pass between generations
-    at_least = models.PositiveIntegerField(null=True, blank=True)
-    weekday = models.PositiveIntegerField(choices=WEEKDAYS,
-                                          null=True, blank=True)
-    date = models.DateField(null=True, blank=True)
-    time = models.TimeField(null=True, blank=True)
-
-
 class Pause(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
     object_id = models.PositiveIntegerField()
