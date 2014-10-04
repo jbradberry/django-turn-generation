@@ -11,6 +11,15 @@ class TestRealm(models.Model):
     pass
 
 
+class GenerationRuleTestCase(TestCase):
+    def setUp(self):
+        self.realm = TestRealm.objects.create()
+        self.gentime = GenerationTime(content_object=self.realm)
+        self.gentime.save()
+
+        self.tz = timezone.get_current_timezone()
+
+
 class NextTimeTestCase(TestCase):
     def setUp(self):
         self.realm = TestRealm.objects.create()
