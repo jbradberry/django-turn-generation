@@ -48,7 +48,7 @@ def timed_generation(pk):
         return
 
     try:
-        plugin.force_generate(generator.realm)
+        plugin.force_generate(realm)
     except Exception as e:
         logger.exception(
             "Generation failed on {app}.{model}(pk={pk}).".format(
@@ -91,8 +91,26 @@ def ready_generation(pk):
         )
         return
 
+    if not generator.autogenerate:
+        logger.info(
+            "Auto-generation not permitted on {app}.{model}(pk={pk}),"
+            " aborting.".format(
+                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+        )
+        Generator.objects.filter(pk=pk).update(generating=False)
+        return
+
+    if not plugin.is_ready(realm):
+        logger.info(
+            "Not ready for auto-generation on {app}.{model}(pk={pk}),"
+            " aborting.".format(
+                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+        )
+        Generator.objects.filter(pk=pk).update(generating=False)
+        return
+
     try:
-        plugin.auto_generate(generator.realm)
+        plugin.auto_generate(realm)
     except Exception as e:
         logger.exception(
             "Generation failed on {app}.{model}(pk={pk}).".format(
