@@ -7,8 +7,6 @@ from dateutil import rrule
 import datetime
 import pytz
 
-from .tasks import trigger_generation
-
 
 class GenerationTime(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
