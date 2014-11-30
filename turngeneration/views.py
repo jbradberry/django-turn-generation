@@ -71,8 +71,8 @@ class RealmMixin(object):
         return realm
 
     def get_generator(self):
-        qs = models.GenerationTime.objects.filter(content_type=self.realm_type,
-                                                  object_id=self.realm.pk)
+        qs = models.Generator.objects.filter(content_type=self.realm_type,
+                                             object_id=self.realm.pk)
         if not qs:
             raise Http404
         return qs.get()

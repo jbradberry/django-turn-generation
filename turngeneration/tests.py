@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.db import models
 from dateutil import rrule
 
-from .models import GenerationTime, GenerationRule
+from .models import Generator, GenerationRule
 
 
 class TestRealm(models.Model):
@@ -15,7 +15,7 @@ class TestRealm(models.Model):
 class GenerationRuleTestCase(TestCase):
     def setUp(self):
         self.realm = TestRealm.objects.create()
-        self.gentime = GenerationTime(content_object=self.realm)
+        self.gentime = Generator(content_object=self.realm)
         self.gentime.save()
 
         self.now = datetime.datetime(2014, 11, 30, 10)

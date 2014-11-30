@@ -8,7 +8,7 @@ import datetime
 import pytz
 
 
-class GenerationTime(models.Model):
+class Generator(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
     object_id = models.PositiveIntegerField()
     content_object = generic.GenericForeignKey()
@@ -50,7 +50,7 @@ class GenerationRule(models.Model):
         # ignore SECONDLY
     )
 
-    generator = models.ForeignKey(GenerationTime, related_name='rules')
+    generator = models.ForeignKey(Generator, related_name='rules')
 
     freq = models.PositiveSmallIntegerField(choices=FREQUENCIES,
                                             default=rrule.DAILY, blank=True)
@@ -94,7 +94,7 @@ class Pause(models.Model):
     object_id = models.PositiveIntegerField()
     owner = generic.GenericForeignKey()
 
-    generator = models.ForeignKey(GenerationTime, related_name='pauses')
+    generator = models.ForeignKey(Generator, related_name='pauses')
     timestamp = models.DateTimeField(auto_now=True)
     reason = models.TextField()
 
@@ -104,5 +104,5 @@ class Ready(models.Model):
     object_id = models.PositiveIntegerField()
     owner = generic.GenericForeignKey()
 
-    generator = models.ForeignKey(GenerationTime, related_name='readies')
+    generator = models.ForeignKey(Generator, related_name='readies')
     timestamp = models.DateTimeField()
