@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.test import TestCase
 from django.db import models
 from dateutil import rrule
+import pytz
 
 from .models import Generator, GenerationRule
 
@@ -25,9 +26,23 @@ class GenerationRuleTestCase(TestCase):
         self.assertIsNone(next_time)
 
     def test_daily(self):
-        self.gentime.rules.create(freq=rrule.DAILY)
+        self.gentime.rules.create(
+            freq=rrule.DAILY,
+            dtstart=datetime.datetime(2014, 11, 29, 18, tzinfo=pytz.utc)
+        )
 
         self.assertEqual(self.gentime.rules.count(), 1)
 
         next_time = self.gentime.next_time(self.now)
-        self.assertIsNotNone(next_time)
+        self.assertEqual(next_time, datetime.datetime(2014, 11, 30, 18))
+
+    def test_weekly(self):
+        self.gentime.rules.create(
+            freq=rrule.WEEKLY,
+            dtstart=datetime.datetime(2014, 11, 29, 18, tzinfo=pytz.utc)
+        )
+
+        self.assertEqual(self.gentime.rules.count(), 1)
+
+        next_time = self.gentime.next_time(self.now)
+        self.assertEqual(next_time, datetime.datetime(2014, 12, 6, 18))

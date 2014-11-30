@@ -82,6 +82,8 @@ class GenerationRule(models.Model):
             value = getattr(self, field, None)
             if field in comma_fields:
                 value = [int(x.strip()) for x in value.split(',') if x.strip()]
+            if field in datetime_fields and value is not None:
+                value = value.replace(tzinfo=None)
             if value is None or value == []:
                 continue
             kwargs[field] = value
