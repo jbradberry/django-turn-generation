@@ -24,6 +24,20 @@ class GenerationTime(models.Model):
     class Meta:
         unique_together = ('content_type', 'object_id')
 
+    @property
+    def rruleset(self):
+        rset = rrule.rruleset()
+        for rule in self.rules.all():
+            rset.rrule(rule.rrule)
+
+        return rset
+
+    def next_time(self, cutoff=None):
+        if cutoff is None:
+            cutoff = datetime.datetime.utcnow()
+
+        return self.rruleset.after(cutoff)
+
 
 class GenerationRule(models.Model):
     FREQUENCIES = (
@@ -36,7 +50,7 @@ class GenerationRule(models.Model):
         # ignore SECONDLY
     )
 
-    generator = models.ForeignKey(GenerationTime)
+    generator = models.ForeignKey(GenerationTime, related_name='rules')
 
     freq = models.PositiveSmallIntegerField(choices=FREQUENCIES,
                                             default=rrule.DAILY, blank=True)
@@ -58,8 +72,6 @@ class GenerationRule(models.Model):
 
     @property
     def rrule(self):
-        tz = timezone.get_current_timezone()
-
         kwargs = {}
         datetime_fields = ('dtstart', 'until')
         comma_fields = ('bysetpos', 'bymonth', 'bymonthday', 'byyearday',
@@ -68,12 +80,10 @@ class GenerationRule(models.Model):
 
         for field in int_fields + datetime_fields + comma_fields:
             value = getattr(self, field, None)
-            if value is None:
+            if field in comma_fields:
+                value = [int(x.strip()) for x in value.split(',') if x.strip()]
+            if value is None or value == []:
                 continue
-            if field in datetime_fields:
-                value = tz.normalize(value.astimezone(tz))
-            elif field in comma_fields:
-                value = [int(x.strip()) for x in value.split(',')]
             kwargs[field] = value
 
         return rrule.rrule(self.freq, **kwargs)
