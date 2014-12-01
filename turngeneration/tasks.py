@@ -2,7 +2,7 @@ from django.conf import settings
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
-from . import models
+from . import models, plugins
 
 logger = get_task_logger(__name__)
 
@@ -48,6 +48,7 @@ def timed_generation(pk):
         return
 
     try:
+        plugin = plugins.all_plugins[realm_type.app_label]
         plugin.force_generate(realm)
     except Exception as e:
         logger.exception(
@@ -110,6 +111,7 @@ def ready_generation(pk):
         return
 
     try:
+        plugin = plugins.all_plugins[realm_type.app_label]
         plugin.auto_generate(realm)
     except Exception as e:
         logger.exception(
