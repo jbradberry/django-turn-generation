@@ -2,15 +2,11 @@ import datetime
 
 from django.utils import timezone
 from django.test import TestCase
-from django.db import models
 from dateutil import rrule
 import pytz
 
-from .models import Generator, GenerationRule
-
-
-class TestRealm(models.Model):
-    pass
+from ..models import Generator, GenerationRule
+from sample_project.sample_app.models import TestRealm
 
 
 class GenerationRuleTestCase(TestCase):

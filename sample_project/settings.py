@@ -72,6 +72,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'turngeneration',
+    'sample_project.sample_app',
 )
 
 SENDFILE_BACKEND = 'sendfile.backends.development'
