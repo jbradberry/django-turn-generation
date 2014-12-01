@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.contenttypes.models import ContentType
 from django.views.generic import CreateView, DeleteView
 from django.contrib.auth.decorators import permission_required, login_required
@@ -11,6 +13,8 @@ from .shim14 import JsonResponse
 
 from . import models
 from . import forms
+
+logger = logging.getLogger(__name__)
 
 
 class AjaxMixin(object):
@@ -78,39 +82,15 @@ class RealmMixin(object):
         return qs.get()
 
     def get_owner(self):
-        app_config = getattr(settings, 'TURNGENERATION_SETTINGS', {})
-        model_config = app_config.get(
-            '{0.app_label}.{0.model}'.format(self.realm_type), {})
-        pause_owner = model_config.get('pause_owner')
-        if pause_owner is None:
+        plugin = plugins.all_plugins.get(self.realm_type.app_label)
+        if plugin is None:
+            logger.error(
+                "Plugin for app {app} does not exist.".format(
+                    app=self.realm_type.app_label)
+            )
             return
-
-        owner_model_name, kwarg_template = pause_owner
-        app_label, model = owner_model_name.split('.')
-        owner_type = ContentType.objects.get(app_label=app_label,
-                                             model=model)
-        kwargs = {}
-        for key, value in kwarg_template.iteritems():
-            if isinstance(value, basestring):
-                if value.startswith('{') and not value.startswith('{{'):
-                    value = value[1:-1]
-                    if value == 'realm':
-                        value = self.realm
-                    elif value == 'user':
-                        value = self.request.user
-                    elif value.startswith('session.'):
-                        value = self.request.session.get(value[8:])
-                        if value is None:
-                            continue
-                else:
-                    # unescape the escaped braces
-                    kwargs[key] = value.format()
-
-            kwargs[key] = value
-
-        qs = owner_type.model_class().objects.filter(**kwargs)
-        if qs:
-            return qs[0]
+        return plugin.get_owner(self.realm, self.request.user,
+                                self.request.session)
 
 
 class PauseView(AjaxMixin, RealmMixin, CreateView):
