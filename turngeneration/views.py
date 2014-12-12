@@ -161,4 +161,4 @@ class UnPauseView(AjaxMixin, RealmMixin, DeleteView):
         return kwargs
 
     def has_permission(self, user, owner):
-        return self.plugin.has_pause_permission(user, owner)
+        return self.plugin.has_unpause_permission(user, owner)
