@@ -154,12 +154,6 @@ class UnPauseView(AjaxMixin, RealmMixin, DeleteView):
         except ObjectDoesNotExist:
             raise Http404
 
-    def get_form_kwargs(self):
-        kwargs = super(UnPauseView, self).get_form_kwargs()
-        kwargs.update(instance=self.model(generator=self.generator,
-                                          owner=self.owner))
-        return kwargs
-
     def has_permission(self, user, owner):
         return self.plugin.has_unpause_permission(user, owner)
 
@@ -183,3 +177,26 @@ class ReadyView(AjaxMixin, RealmMixin, CreateView):
 
     def has_permission(self, user, owner):
         return self.plugin.has_ready_permission(user, owner)
+
+
+class UnReadyView(AjaxMixin, RealmMixin, DeleteView):
+    model = models.Ready
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(UnReadyView, self).dispatch(*args, **kwargs)
+
+    def get_success_url(self):
+        return self.realm.get_absolute_url()
+
+    def get_object(self):
+        owner_type = ContentType.objects.get_for_model(self.owner)
+        try:
+            return models.Ready.objects.filter(generator=self.generator,
+                                               content_type=owner_type,
+                                               object_id=self.owner.pk)
+        except ObjectDoesNotExist:
+            raise Http404
+
+    def has_permission(self, user, owner):
+        return self.plugin.has_unready_permission(user, owner)

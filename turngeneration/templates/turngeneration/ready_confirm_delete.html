@@ -1,0 +1,12 @@
+{% extends "turngeneration/base.html" %}
+
+{% block title %}Unready | {{ block.super }}{% endblock %}
+
+{% block header %}<h1>Unready</h1>{% endblock %}
+
+{% block content %}
+<form method="post" action="">{% csrf_token %}
+  <p>Are you sure you want to mark yourself as not ready?</p>
+  <input type="submit" value="Confirm" />
+</form>
+{% endblock %}
