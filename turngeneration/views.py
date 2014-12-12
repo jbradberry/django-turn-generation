@@ -133,3 +133,32 @@ class PauseView(AjaxMixin, RealmMixin, CreateView):
 
     def has_permission(self, user, owner):
         return self.plugin.has_pause_permission(user, owner)
+
+
+class UnPauseView(AjaxMixin, RealmMixin, DeleteView):
+    model = models.Pause
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(UnPauseView, self).dispatch(*args, **kwargs)
+
+    def get_success_url(self):
+        return self.realm.get_absolute_url()
+
+    def get_object(self):
+        owner_type = ContentType.objects.get_for_model(self.owner)
+        try:
+            return models.Pause.objects.filter(generator=self.generator,
+                                               content_type=owner_type,
+                                               object_id=self.owner.pk)
+        except ObjectDoesNotExist:
+            raise Http404
+
+    def get_form_kwargs(self):
+        kwargs = super(UnPauseView, self).get_form_kwargs()
+        kwargs.update(instance=self.model(generator=self.generator,
+                                          owner=self.owner))
+        return kwargs
+
+    def has_permission(self, user, owner):
+        return self.plugin.has_pause_permission(user, owner)

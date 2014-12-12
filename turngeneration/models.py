@@ -100,6 +100,9 @@ class Pause(models.Model):
     timestamp = models.DateTimeField(auto_now=True)
     reason = models.TextField()
 
+    class Meta:
+        unique_together = ('content_type', 'object_id', 'generator')
+
 
 class Ready(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
@@ -108,3 +111,6 @@ class Ready(models.Model):
 
     generator = models.ForeignKey(Generator, related_name='readies')
     timestamp = models.DateTimeField()
+
+    class Meta:
+        unique_together = ('content_type', 'object_id', 'generator')
