@@ -110,7 +110,7 @@ class Ready(models.Model):
     owner = generic.GenericForeignKey()
 
     generator = models.ForeignKey(Generator, related_name='readies')
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('content_type', 'object_id', 'generator')
