@@ -4,15 +4,15 @@ from django.contrib.contenttypes.models import ContentType
 from django.views.generic import CreateView, DeleteView
 from django.contrib.auth.decorators import permission_required, login_required
 from django.utils.decorators import method_decorator
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import (PermissionDenied, ObjectDoesNotExist,
+                                    ImproperlyConfigured)
 from django.core.urlresolvers import reverse_lazy
 from django.http import Http404
 from django.conf import settings
 
 from .shim14 import JsonResponse
 
-from . import models
-from . import forms
+from . import models, forms, plugins
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,14 @@ class RealmMixin(object):
                 "{0} is missing a valid realm_content_type.".format(
                     self.__class__.__name__))
 
+        plugin = plugins.all_plugins.get(self.realm_type.app_label)
+        if plugin is None:
+            raise ImproperlyConfigured(
+                "Plugin for app '{app}' does not exist.".format(
+                    app=self.realm_type.app_label)
+            )
+        self.plugin = plugin()
+
         realm_pk = self.kwargs.get(self.pk_realm_kwarg)
         realm_slug = self.kwargs.get(self.slug_realm_kwarg)
 
@@ -82,15 +90,28 @@ class RealmMixin(object):
         return qs.get()
 
     def get_owner(self):
-        plugin = plugins.all_plugins.get(self.realm_type.app_label)
-        if plugin is None:
-            logger.error(
-                "Plugin for app {app} does not exist.".format(
-                    app=self.realm_type.app_label)
-            )
-            return
-        return plugin.get_owner(self.realm, self.request.user,
-                                self.request.session)
+        owner = self.plugin.get_owner(self.realm, self.kwargs)
+        if owner is None:
+            raise Http404
+        return owner
+
+    def get(self, request, *args, **kwargs):
+        self.realm = self.get_realm()
+        self.generator = self.get_generator()
+        self.owner = self.get_owner()
+        if not self.has_permission(self.request.user, self.owner):
+            raise PermissionDenied
+
+        return super(RealmMixin, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.realm = self.get_realm()
+        self.generator = self.get_generator()
+        self.owner = self.get_owner()
+        if not self.has_permission(self.request.user, self.owner):
+            raise PermissionDenied
+
+        return super(RealmMixin, self).post(request, *args, **kwargs)
 
 
 class PauseView(AjaxMixin, RealmMixin, CreateView):
@@ -110,18 +131,5 @@ class PauseView(AjaxMixin, RealmMixin, CreateView):
                                           owner=self.owner))
         return kwargs
 
-    def get(self, request, *args, **kwargs):
-        self.realm = self.get_realm()
-        self.generator = self.get_generator()
-        self.owner = self.get_owner()
-        if self.owner is None:
-            raise PermissionDenied
-        return super(PauseView, self).get(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        self.realm = self.get_realm()
-        self.generator = self.get_generator()
-        self.owner = self.get_owner()
-        if self.owner is None:
-            raise PermissionDenied
-        return super(PauseView, self).post(request, *args, **kwargs)
+    def has_permission(self, user, owner):
+        return self.plugin.has_pause_permission(user, owner)

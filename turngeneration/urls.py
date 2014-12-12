@@ -4,5 +4,6 @@ from . import views
 
 
 urlpatterns = patterns('',
-    url(r'^pause/$', views.PauseView.as_view(), name='pause_view'),
+    url(r'^pause/(?P<owner_slug>[-\w]+)/$', views.PauseView.as_view(),
+        name='pause_view'),
 )
