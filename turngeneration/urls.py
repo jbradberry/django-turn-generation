@@ -8,4 +8,6 @@ urlpatterns = patterns('',
         name='pause_view'),
     url(r'^unpause/(?P<owner_slug>[-\w]+)/$', views.UnPauseView.as_view(),
         name='unpause_view'),
+    url(r'^ready/(?P<owner_slug>[-\w]+)/$', views.ReadyView.as_view(),
+        name='ready_view'),
 )

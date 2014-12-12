@@ -162,3 +162,24 @@ class UnPauseView(AjaxMixin, RealmMixin, DeleteView):
 
     def has_permission(self, user, owner):
         return self.plugin.has_unpause_permission(user, owner)
+
+
+class ReadyView(AjaxMixin, RealmMixin, CreateView):
+    model = models.Ready
+    form_class = forms.ReadyForm
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(ReadyView, self).dispatch(*args, **kwargs)
+
+    def get_success_url(self):
+        return self.realm.get_absolute_url()
+
+    def get_form_kwargs(self):
+        kwargs = super(ReadyView, self).get_form_kwargs()
+        kwargs.update(instance=self.model(generator=self.generator,
+                                          owner=self.owner))
+        return kwargs
+
+    def has_permission(self, user, owner):
+        return self.plugin.has_ready_permission(user, owner)
