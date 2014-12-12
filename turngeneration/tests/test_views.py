@@ -26,6 +26,10 @@ class PauseViewTestCase(TestCase):
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
         self.assertEqual(models.Pause.objects.count(), 0)
 
     def test_generator_does_not_exist(self):
@@ -38,6 +42,10 @@ class PauseViewTestCase(TestCase):
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
         self.assertEqual(models.Pause.objects.count(), 0)
 
     def test_owner_does_not_exist(self):
@@ -53,6 +61,10 @@ class PauseViewTestCase(TestCase):
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
         self.assertEqual(models.Pause.objects.count(), 0)
 
     def test_user_does_not_have_permission(self):
