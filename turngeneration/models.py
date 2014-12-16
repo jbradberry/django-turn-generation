@@ -97,6 +97,7 @@ class Pause(models.Model):
     owner = generic.GenericForeignKey()
 
     generator = models.ForeignKey(Generator, related_name='pauses')
+    user = models.ForeignKey("auth.User", null=True)
     timestamp = models.DateTimeField(auto_now=True)
     reason = models.TextField()
 
@@ -110,6 +111,7 @@ class Ready(models.Model):
     owner = generic.GenericForeignKey()
 
     generator = models.ForeignKey(Generator, related_name='readies')
+    user = models.ForeignKey("auth.User", null=True)
     timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
