@@ -8,7 +8,7 @@ class TestRealm(models.Model):
         return ''
 
 
-class TestOwner(models.Model):
-    realm = models.ForeignKey(TestRealm, related_name='owners', null=True)
+class TestAgent(models.Model):
+    realm = models.ForeignKey(TestRealm, related_name='agents', null=True)
     slug = models.CharField(max_length=16)
     user = models.ForeignKey('auth.User', null=True)

@@ -89,17 +89,17 @@ class RealmMixin(object):
             raise Http404
         return qs.get()
 
-    def get_owner(self):
-        owner = self.plugin.get_owner(self.realm, self.kwargs)
-        if owner is None:
+    def get_agent(self):
+        agent = self.plugin.get_agent(self.realm, self.kwargs)
+        if agent is None:
             raise Http404
-        return owner
+        return agent
 
     def get(self, request, *args, **kwargs):
         self.realm = self.get_realm()
         self.generator = self.get_generator()
-        self.owner = self.get_owner()
-        if not self.has_permission(self.request.user, self.owner):
+        self.agent = self.get_agent()
+        if not self.has_permission(self.request.user, self.agent):
             raise PermissionDenied
 
         return super(RealmMixin, self).get(request, *args, **kwargs)
@@ -107,8 +107,8 @@ class RealmMixin(object):
     def post(self, request, *args, **kwargs):
         self.realm = self.get_realm()
         self.generator = self.get_generator()
-        self.owner = self.get_owner()
-        if not self.has_permission(self.request.user, self.owner):
+        self.agent = self.get_agent()
+        if not self.has_permission(self.request.user, self.agent):
             raise PermissionDenied
 
         return super(RealmMixin, self).post(request, *args, **kwargs)
@@ -128,11 +128,11 @@ class PauseView(AjaxMixin, RealmMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super(PauseView, self).get_form_kwargs()
         kwargs.update(instance=self.model(generator=self.generator,
-                                          owner=self.owner))
+                                          agent=self.agent))
         return kwargs
 
-    def has_permission(self, user, owner):
-        return self.plugin.has_pause_permission(user, owner)
+    def has_permission(self, user, agent):
+        return self.plugin.has_pause_permission(user, agent)
 
 
 class UnPauseView(AjaxMixin, RealmMixin, DeleteView):
@@ -146,16 +146,16 @@ class UnPauseView(AjaxMixin, RealmMixin, DeleteView):
         return self.realm.get_absolute_url()
 
     def get_object(self):
-        owner_type = ContentType.objects.get_for_model(self.owner)
+        agent_type = ContentType.objects.get_for_model(self.agent)
         try:
             return models.Pause.objects.filter(generator=self.generator,
-                                               content_type=owner_type,
-                                               object_id=self.owner.pk)
+                                               content_type=agent_type,
+                                               object_id=self.agent.pk)
         except ObjectDoesNotExist:
             raise Http404
 
-    def has_permission(self, user, owner):
-        return self.plugin.has_unpause_permission(user, owner)
+    def has_permission(self, user, agent):
+        return self.plugin.has_unpause_permission(user, agent)
 
 
 class ReadyView(AjaxMixin, RealmMixin, CreateView):
@@ -172,11 +172,11 @@ class ReadyView(AjaxMixin, RealmMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super(ReadyView, self).get_form_kwargs()
         kwargs.update(instance=self.model(generator=self.generator,
-                                          owner=self.owner))
+                                          agent=self.agent))
         return kwargs
 
-    def has_permission(self, user, owner):
-        return self.plugin.has_ready_permission(user, owner)
+    def has_permission(self, user, agent):
+        return self.plugin.has_ready_permission(user, agent)
 
 
 class UnReadyView(AjaxMixin, RealmMixin, DeleteView):
@@ -190,13 +190,13 @@ class UnReadyView(AjaxMixin, RealmMixin, DeleteView):
         return self.realm.get_absolute_url()
 
     def get_object(self):
-        owner_type = ContentType.objects.get_for_model(self.owner)
+        agent_type = ContentType.objects.get_for_model(self.agent)
         try:
             return models.Ready.objects.filter(generator=self.generator,
-                                               content_type=owner_type,
-                                               object_id=self.owner.pk)
+                                               content_type=agent_type,
+                                               object_id=self.agent.pk)
         except ObjectDoesNotExist:
             raise Http404
 
-    def has_permission(self, user, owner):
-        return self.plugin.has_unready_permission(user, owner)
+    def has_permission(self, user, agent):
+        return self.plugin.has_unready_permission(user, agent)

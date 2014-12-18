@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 
 from .. import models
-from sample_project.sample_app.models import TestRealm, TestOwner
+from sample_project.sample_app.models import TestRealm, TestAgent
 
 
 class PauseViewTestCase(TestCase):
@@ -12,8 +12,8 @@ class PauseViewTestCase(TestCase):
                                              password='password')
         self.realm = TestRealm(slug='500years')
         self.realm.save()
-        self.owner = TestOwner(realm=self.realm, slug='bob')
-        self.owner.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
         self.client.login(username='test', password='password')
 
     def test_realm_does_not_exist(self):
@@ -21,7 +21,7 @@ class PauseViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:pause_view',
                             kwargs={'realm_slug': 'ulf-war',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -37,7 +37,7 @@ class PauseViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:pause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -48,7 +48,7 @@ class PauseViewTestCase(TestCase):
 
         self.assertEqual(models.Pause.objects.count(), 0)
 
-    def test_owner_does_not_exist(self):
+    def test_agent_does_not_exist(self):
         self.assertEqual(models.Pause.objects.count(), 0)
 
         generator = models.Generator(content_object=self.realm)
@@ -56,7 +56,7 @@ class PauseViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:pause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'duelafn'},
+                                    'agent_slug': 'duelafn'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -75,7 +75,7 @@ class PauseViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:pause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -95,12 +95,12 @@ class PauseViewTestCase(TestCase):
         generator = models.Generator(content_object=self.realm,
                                      allow_pauses=False)
         generator.save()
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
         realm_url = reverse('turngeneration:pause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -120,12 +120,12 @@ class PauseViewTestCase(TestCase):
 
         generator = models.Generator(content_object=self.realm)
         generator.save()
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
         realm_url = reverse('turngeneration:pause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -142,16 +142,16 @@ class PauseViewTestCase(TestCase):
     def test_already_paused(self):
         generator = models.Generator(content_object=self.realm)
         generator.save()
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
-        pause = models.Pause(owner=self.owner, generator=generator)
+        pause = models.Pause(agent=self.agent, generator=generator)
         pause.save()
         self.assertEqual(models.Pause.objects.count(), 1)
 
         realm_url = reverse('turngeneration:pause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -173,11 +173,11 @@ class UnPauseViewTestCase(TestCase):
                                              password='password')
         self.realm = TestRealm(slug='500years')
         self.realm.save()
-        self.owner = TestOwner(realm=self.realm, slug='bob')
-        self.owner.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
         self.generator = models.Generator(content_object=self.realm)
         self.generator.save()
-        self.pause = models.Pause(owner=self.owner,
+        self.pause = models.Pause(agent=self.agent,
                                   generator=self.generator)
         self.pause.save()
         self.client.login(username='test', password='password')
@@ -187,7 +187,7 @@ class UnPauseViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:unpause_view',
                             kwargs={'realm_slug': 'ulf-war',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -204,7 +204,7 @@ class UnPauseViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:unpause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -215,12 +215,12 @@ class UnPauseViewTestCase(TestCase):
 
         self.assertEqual(models.Pause.objects.count(), 0)
 
-    def test_owner_does_not_exist(self):
+    def test_agent_does_not_exist(self):
         self.assertEqual(models.Pause.objects.count(), 1)
 
         realm_url = reverse('turngeneration:unpause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'duelafn'},
+                                    'agent_slug': 'duelafn'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -236,7 +236,7 @@ class UnPauseViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:unpause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -250,12 +250,12 @@ class UnPauseViewTestCase(TestCase):
     def test_pauses_not_allowed_can_still_unpause(self):
         self.assertEqual(models.Pause.objects.count(), 1)
 
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
         realm_url = reverse('turngeneration:unpause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -270,12 +270,12 @@ class UnPauseViewTestCase(TestCase):
     def test_success(self):
         self.assertEqual(models.Pause.objects.count(), 1)
 
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
         realm_url = reverse('turngeneration:unpause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -290,12 +290,12 @@ class UnPauseViewTestCase(TestCase):
         self.pause.delete()
         self.assertEqual(models.Pause.objects.count(), 0)
 
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
         realm_url = reverse('turngeneration:unpause_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -313,8 +313,8 @@ class ReadyViewTestCase(TestCase):
                                              password='password')
         self.realm = TestRealm(slug='500years')
         self.realm.save()
-        self.owner = TestOwner(realm=self.realm, slug='bob')
-        self.owner.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
         self.client.login(username='test', password='password')
 
     def test_realm_does_not_exist(self):
@@ -322,7 +322,7 @@ class ReadyViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:ready_view',
                             kwargs={'realm_slug': 'ulf-war',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -338,7 +338,7 @@ class ReadyViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:ready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -349,7 +349,7 @@ class ReadyViewTestCase(TestCase):
 
         self.assertEqual(models.Ready.objects.count(), 0)
 
-    def test_owner_does_not_exist(self):
+    def test_agent_does_not_exist(self):
         self.assertEqual(models.Ready.objects.count(), 0)
 
         generator = models.Generator(content_object=self.realm)
@@ -357,7 +357,7 @@ class ReadyViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:ready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'duelafn'},
+                                    'agent_slug': 'duelafn'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -376,7 +376,7 @@ class ReadyViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:ready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -392,12 +392,12 @@ class ReadyViewTestCase(TestCase):
 
         generator = models.Generator(content_object=self.realm)
         generator.save()
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
         realm_url = reverse('turngeneration:ready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -411,16 +411,16 @@ class ReadyViewTestCase(TestCase):
     def test_already_ready(self):
         generator = models.Generator(content_object=self.realm)
         generator.save()
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
-        ready = models.Ready(owner=self.owner, generator=generator)
+        ready = models.Ready(agent=self.agent, generator=generator)
         ready.save()
         self.assertEqual(models.Ready.objects.count(), 1)
 
         realm_url = reverse('turngeneration:ready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -435,17 +435,17 @@ class ReadyViewTestCase(TestCase):
     def test_can_mark_ready_while_paused(self):
         generator = models.Generator(content_object=self.realm)
         generator.save()
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
-        pause = models.Pause(owner=self.owner, generator=generator)
+        pause = models.Pause(agent=self.agent, generator=generator)
         pause.save()
         self.assertEqual(models.Pause.objects.count(), 1)
         self.assertEqual(models.Ready.objects.count(), 0)
 
         realm_url = reverse('turngeneration:ready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -466,11 +466,11 @@ class UnReadyViewTestCase(TestCase):
                                              password='password')
         self.realm = TestRealm(slug='500years')
         self.realm.save()
-        self.owner = TestOwner(realm=self.realm, slug='bob')
-        self.owner.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
         self.generator = models.Generator(content_object=self.realm)
         self.generator.save()
-        self.ready = models.Ready(owner=self.owner,
+        self.ready = models.Ready(agent=self.agent,
                                   generator=self.generator)
         self.ready.save()
         self.client.login(username='test', password='password')
@@ -480,7 +480,7 @@ class UnReadyViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:unready_view',
                             kwargs={'realm_slug': 'ulf-war',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -497,7 +497,7 @@ class UnReadyViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:unready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -508,12 +508,12 @@ class UnReadyViewTestCase(TestCase):
 
         self.assertEqual(models.Ready.objects.count(), 0)
 
-    def test_owner_does_not_exist(self):
+    def test_agent_does_not_exist(self):
         self.assertEqual(models.Ready.objects.count(), 1)
 
         realm_url = reverse('turngeneration:unready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'duelafn'},
+                                    'agent_slug': 'duelafn'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -529,7 +529,7 @@ class UnReadyViewTestCase(TestCase):
 
         realm_url = reverse('turngeneration:unready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -543,12 +543,12 @@ class UnReadyViewTestCase(TestCase):
     def test_success(self):
         self.assertEqual(models.Ready.objects.count(), 1)
 
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
         realm_url = reverse('turngeneration:unready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)
@@ -563,12 +563,12 @@ class UnReadyViewTestCase(TestCase):
         self.ready.delete()
         self.assertEqual(models.Ready.objects.count(), 0)
 
-        self.owner.user = self.user
-        self.owner.save()
+        self.agent.user = self.user
+        self.agent.save()
 
         realm_url = reverse('turngeneration:unready_view',
                             kwargs={'realm_slug': '500years',
-                                    'owner_slug': 'bob'},
+                                    'agent_slug': 'bob'},
                             current_app="sample_app")
 
         response = self.client.get(realm_url)

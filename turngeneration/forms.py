@@ -16,8 +16,8 @@ class PauseForm(forms.ModelForm):
             raise forms.ValidationError("Pauses are not enabled.")
         if models.Pause.objects.filter(
             generator=self.instance.generator,
-            content_type=ContentType.objects.get_for_model(self.instance.owner),
-            object_id=self.instance.owner.pk
+            content_type=ContentType.objects.get_for_model(self.instance.agent),
+            object_id=self.instance.agent.pk
         ).exists():
             raise forms.ValidationError("You have already paused.")
 
@@ -34,8 +34,8 @@ class ReadyForm(forms.ModelForm):
 
         if models.Ready.objects.filter(
             generator=self.instance.generator,
-            content_type=ContentType.objects.get_for_model(self.instance.owner),
-            object_id=self.instance.owner.pk
+            content_type=ContentType.objects.get_for_model(self.instance.agent),
+            object_id=self.instance.agent.pk
         ).exists():
             raise forms.ValidationError("You are already marked as ready.")
 

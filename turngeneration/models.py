@@ -96,7 +96,7 @@ class GenerationRule(models.Model):
 class Pause(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
     object_id = models.PositiveIntegerField()
-    owner = generic.GenericForeignKey()
+    agent = generic.GenericForeignKey()
 
     generator = models.ForeignKey(Generator, related_name='pauses')
     user = models.ForeignKey("auth.User", null=True)
@@ -110,7 +110,7 @@ class Pause(models.Model):
 class Ready(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
     object_id = models.PositiveIntegerField()
-    owner = generic.GenericForeignKey()
+    agent = generic.GenericForeignKey()
 
     generator = models.ForeignKey(Generator, related_name='readies')
     user = models.ForeignKey("auth.User", null=True)
