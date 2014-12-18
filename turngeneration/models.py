@@ -13,6 +13,8 @@ class Generator(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = generic.GenericForeignKey()
 
+    generating = models.BooleanField(default=False, blank=True)
+
     generation_time = models.DateTimeField(null=True)
     task_id = models.TextField()
 
