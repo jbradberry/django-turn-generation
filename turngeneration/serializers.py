@@ -14,21 +14,19 @@ class ContentTypeField(serializers.RelatedField):
 
 
 class GeneratorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Generator
-        fields = ('generating', 'generation_time', 'autogenerate',
-                  'allow_pauses', 'minimum_between_generations')
-        read_only_fields = ('generating', 'generation_time')
-
-
-class GeneratorCreateSerializer(serializers.ModelSerializer):
     content_type = ContentTypeField(queryset=ContentType.objects.all())
 
-    class Meta:
+    class Meta(object):
         model = models.Generator
         fields = ('content_type', 'object_id',
                   'generating', 'generation_time', 'autogenerate',
                   'allow_pauses', 'minimum_between_generations')
+        read_only_fields = ('content_type', 'object_id',
+                            'generating', 'generation_time')
+
+
+class GeneratorCreateSerializer(GeneratorSerializer):
+    class Meta(GeneratorSerializer.Meta):
         read_only_fields = ('generating', 'generation_time')
 
 

@@ -1,3 +1,8 @@
+from rest_framework import viewsets
+
+from . import serializers
+
+
 import logging
 
 from django.contrib.contenttypes.models import ContentType
@@ -15,6 +20,64 @@ from .shim14 import JsonResponse
 from . import models, forms, plugins
 
 logger = logging.getLogger(__name__)
+
+
+class RealmMixin(object):
+    pass
+
+
+class AgentMixin(object):
+    pass
+
+
+class GeneratorViewSet(viewsets.ModelViewSet):
+    serializer_class = serializers.GeneratorSerializer
+    queryset = models.Generator.objects.all()
+
+    def get_serializer_class(self):
+        serializer_class = self.serializer_class
+
+        if self.request.method == 'POST':
+            serializer_class = serializers.GeneratorCreateSerializer
+
+        return serializer_class
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        assert 'realm_content_type' in self.kwargs, (
+            "Expected view %s to be called with a URL keyword argument "
+            "named 'realm_content_type'." % (self.__class__.__name__,)
+        )
+
+        assert 'realm_pk' in self.kwargs, (
+            "Expected view %s to be called with a URL keyword argument "
+            "named 'realm_pk'." % (self.__class__.__name__,)
+        )
+
+        realm_content_type = self.kwargs['realm_content_type']
+        try:
+            app_label, model = realm_content_type.split('.')
+            model = model.lower()
+            realm_type = ContentType.objects.get(app_label=app_label,
+                                                 model=model)
+        except (ObjectDoesNotExist, ValueError) as e:
+            raise Http404
+
+        if app_label not in plugins.entry_points:
+            raise Http404
+
+        filter_kwargs = {'content_type': realm_type,
+                         'object_id': self.kwargs['realm_pk']}
+        obj = get_object_or_404(queryset, **filter_kwargs)
+
+        # May raise a permission denied
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
+    def get_proxy(self):
+        return
 
 
 class AjaxMixin(object):
