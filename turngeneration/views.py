@@ -118,13 +118,13 @@ class RealmMixin(object):
                 "{0} is missing a valid realm_content_type.".format(
                     self.__class__.__name__))
 
-        plugin = plugins.all_plugins.get(self.realm_type.app_label)
+        plugin = plugins.get(self.realm_type.app_label)
         if plugin is None:
             raise ImproperlyConfigured(
                 "Plugin for app '{app}' does not exist.".format(
                     app=self.realm_type.app_label)
             )
-        self.plugin = plugin()
+        self.plugin = plugin
 
         realm_pk = self.kwargs.get(self.pk_realm_kwarg)
         realm_slug = self.kwargs.get(self.slug_realm_kwarg)

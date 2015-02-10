@@ -8,4 +8,4 @@ entry_points = dict((ep.name, ep.load()) for ep in
 def get(app_label):
     if app_label not in entry_points:
         return None
-    return _entry_points[app_label]()
+    return entry_points[app_label]()
