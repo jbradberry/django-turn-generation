@@ -1,8 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.conf import settings
 
-from rest_framework import generics, viewsets
+from rest_framework import generics, viewsets, mixins
 
 import logging
 
@@ -48,3 +49,43 @@ class RealmListView(RealmMixin, generics.ListAPIView):
 class RealmRetrieveView(RealmMixin, generics.RetrieveAPIView):
     # /api/starsgame/3/
     pass
+
+
+class GeneratorView(mixins.CreateModelMixin,
+                    mixins.RetrieveModelMixin,
+                    mixins.UpdateModelMixin,
+                    mixins.DestroyModelMixin,
+                    generics.GenericAPIView):
+    # /api/starsgame/3/generator/
+    serializer_class = serializers.GeneratorSerializer
+    queryset = models.Generator.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        alias = self.kwargs.get('realm_alias')
+        ct = plugins.realm_type(alias)
+        pk = self.kwargs.get('realm_pk')
+
+        filter_kwargs = {'content_type': ct, 'object_id': pk}
+        obj = get_object_or_404(queryset, **filter_kwargs)
+
+        # May raise a permission denied
+        self.check_object_permissions(self.request, obj)
+
+        return obj
