@@ -1,21 +1,12 @@
-from rest_framework import generics, viewsets
-
-from . import serializers
-
-
-import logging
-
 from django.contrib.contenttypes.models import ContentType
-from django.views.generic import CreateView, DeleteView
-from django.contrib.auth.decorators import permission_required, login_required
-from django.utils.decorators import method_decorator
-from django.core.exceptions import (PermissionDenied, ObjectDoesNotExist,
-                                    ImproperlyConfigured)
-from django.core.urlresolvers import reverse_lazy
 from django.http import Http404
 from django.conf import settings
 
-from . import models, forms, plugins
+from rest_framework import generics, viewsets
+
+import logging
+
+from . import models, forms, plugins, serializers
 
 logger = logging.getLogger(__name__)
 
