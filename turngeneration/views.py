@@ -42,3 +42,15 @@ class RealmListView(generics.ListAPIView):
         if content_type is None:
             raise Http404
         return content_type.model_class().objects.all()
+
+
+class RealmRetrieveView(generics.RetrieveAPIView):
+    # /api/starsgame/3/
+    serializer_class = serializers.RealmSerializer
+    lookup_url_kwarg = 'realm_pk'
+
+    def get_queryset(self):
+        content_type = plugins.realm_type(self.kwargs.get('realm_alias'))
+        if content_type is None:
+            raise Http404
+        return content_type.model_class().objects.all()
