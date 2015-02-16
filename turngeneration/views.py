@@ -51,7 +51,18 @@ class RealmRetrieveView(RealmMixin, generics.RetrieveAPIView):
     pass
 
 
-class GeneratorView(mixins.CreateModelMixin,
+class GeneratorMixin(object):
+    def get_generator(self, queryset):
+        alias = self.kwargs.get('realm_alias')
+        ct = plugins.realm_type(alias)
+        pk = self.kwargs.get('realm_pk')
+
+        filter_kwargs = {'content_type': ct, 'object_id': pk}
+        return get_object_or_404(queryset, **filter_kwargs)
+
+
+class GeneratorView(GeneratorMixin,
+                    mixins.CreateModelMixin,
                     mixins.RetrieveModelMixin,
                     mixins.UpdateModelMixin,
                     mixins.DestroyModelMixin,
@@ -77,55 +88,31 @@ class GeneratorView(mixins.CreateModelMixin,
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
-
-        alias = self.kwargs.get('realm_alias')
-        ct = plugins.realm_type(alias)
-        pk = self.kwargs.get('realm_pk')
-
-        filter_kwargs = {'content_type': ct, 'object_id': pk}
-        obj = get_object_or_404(queryset, **filter_kwargs)
+        generator = self.get_generator(queryset)
 
         # May raise a permission denied
-        self.check_object_permissions(self.request, obj)
+        self.check_object_permissions(self.request, generator)
 
-        return obj
+        return generator
 
 
-class GenerationRuleListView(generics.ListCreateAPIView):
+class GenerationRuleListView(GeneratorMixin, generics.ListCreateAPIView):
     # /api/starsgame/3/generator/rules/
     serializer_class = serializers.GenerationRuleSerializer
 
     def perform_create(self, serializer):
-        generator = self.get_generator()
+        generator = self.get_generator(models.Generator.objects.all())
         serializer.save(generator_id=generator.id)
 
-    def get_generator(self):
-        alias = self.kwargs.get('realm_alias')
-        ct = plugins.realm_type(alias)
-        pk = self.kwargs.get('realm_pk')
-
-        filter_kwargs = {'content_type': ct, 'object_id': pk}
-        return get_object_or_404(models.Generator.objects.all(),
-                                 **filter_kwargs)
-
     def get_queryset(self):
-        generator = self.get_generator()
+        generator = self.get_generator(models.Generator.objects.all())
         return generator.rules.all()
 
 
-class GenerationRuleView(generics.RetrieveUpdateDestroyAPIView):
+class GenerationRuleView(GeneratorMixin, generics.RetrieveUpdateDestroyAPIView):
     # /api/starsgame/3/generator/rules/7/
     serializer_class = serializers.GenerationRuleSerializer
 
-    def get_generator(self):
-        alias = self.kwargs.get('realm_alias')
-        ct = plugins.realm_type(alias)
-        pk = self.kwargs.get('realm_pk')
-
-        filter_kwargs = {'content_type': ct, 'object_id': pk}
-        return get_object_or_404(models.Generator.objects.all(),
-                                 **filter_kwargs)
-
     def get_queryset(self):
-        generator = self.get_generator()
+        generator = self.get_generator(models.Generator.objects.all())
         return generator.rules.all()
