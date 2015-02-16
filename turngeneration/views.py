@@ -89,3 +89,43 @@ class GeneratorView(mixins.CreateModelMixin,
         self.check_object_permissions(self.request, obj)
 
         return obj
+
+
+class GenerationRuleListView(generics.ListCreateAPIView):
+    # /api/starsgame/3/generator/rules/
+    serializer_class = serializers.GenerationRuleSerializer
+
+    def perform_create(self, serializer):
+        generator = self.get_generator()
+        serializer.save(generator_id=generator.id)
+
+    def get_generator(self):
+        alias = self.kwargs.get('realm_alias')
+        ct = plugins.realm_type(alias)
+        pk = self.kwargs.get('realm_pk')
+
+        filter_kwargs = {'content_type': ct, 'object_id': pk}
+        return get_object_or_404(models.Generator.objects.all(),
+                                 **filter_kwargs)
+
+    def get_queryset(self):
+        generator = self.get_generator()
+        return generator.rules.all()
+
+
+class GenerationRuleView(generics.RetrieveUpdateDestroyAPIView):
+    # /api/starsgame/3/generator/rules/7/
+    serializer_class = serializers.GenerationRuleSerializer
+
+    def get_generator(self):
+        alias = self.kwargs.get('realm_alias')
+        ct = plugins.realm_type(alias)
+        pk = self.kwargs.get('realm_pk')
+
+        filter_kwargs = {'content_type': ct, 'object_id': pk}
+        return get_object_or_404(models.Generator.objects.all(),
+                                 **filter_kwargs)
+
+    def get_queryset(self):
+        generator = self.get_generator()
+        return generator.rules.all()

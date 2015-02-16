@@ -43,12 +43,12 @@ class Generator(models.Model):
 
 class GenerationRule(models.Model):
     FREQUENCIES = (
-        ('Yearly', rrule.YEARLY),
-        ('Monthly', rrule.MONTHLY),
-        ('Weekly', rrule.WEEKLY),
-        ('Daily', rrule.DAILY),
-        ('Hourly', rrule.HOURLY),
-        ('Minutely', rrule.MINUTELY),
+        (rrule.YEARLY, 'Yearly'),
+        (rrule.MONTHLY, 'Monthly'),
+        (rrule.WEEKLY, 'Weekly'),
+        (rrule.DAILY, 'Daily'),
+        (rrule.HOURLY, 'Hourly'),
+        (rrule.MINUTELY, 'Minutely'),
         # ignore SECONDLY
     )
 

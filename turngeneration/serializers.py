@@ -16,7 +16,7 @@ class ContentTypeField(serializers.Field):
 class ReadOnlyDefault(object):
     def set_context(self, serializer_field):
         self.current_value = getattr(serializer_field.parent.instance,
-                                     serializer_field.name, None)
+                                     serializer_field.field_name, None)
 
     def __call__(self):
         return self.current_value
@@ -57,3 +57,14 @@ class RealmSerializer(serializers.Serializer):
             return None
 
         return GeneratorSerializer(generator).data
+
+
+class GenerationRuleSerializer(serializers.ModelSerializer):
+    generator_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = models.GenerationRule
+        fields = ('id', 'generator_id', 'freq', 'dtstart', 'interval', 'count',
+                  'until', 'bysetpos', 'bymonth', 'bymonthday', 'byyearday',
+                  'byweekno', 'byweekday', 'byhour', 'byminute')
+        read_only_fields = ('id',)
