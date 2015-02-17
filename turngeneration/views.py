@@ -140,3 +140,56 @@ class AgentListView(GeneratorMixin, AgentMixin, generics.ListAPIView):
 class AgentRetrieveView(GeneratorMixin, AgentMixin, generics.RetrieveAPIView):
     # /api/starsgame/3/starsrace/5/
     serializer_class = serializers.AgentSerializer
+
+
+class PauseView(GeneratorMixin,
+                mixins.CreateModelMixin,
+                mixins.RetrieveModelMixin,
+                mixins.UpdateModelMixin,
+                mixins.DestroyModelMixin,
+                generics.GenericAPIView):
+    # /api/starsgame/3/starsrace/5/pause/
+    serializer_class = serializers.PauseSerializer
+    queryset = models.Pause.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        generator = self.get_generator(models.Generator.objects.all())
+
+        alias = self.kwargs.get('agent_alias')
+        ct = plugins.agent_type(alias)
+        pk = self.kwargs.get('agent_pk')
+
+        serializer.save(content_type=ct, object_id=pk,
+                        generator_id=generator.id)
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        generator = self.get_generator(models.Generator.objects.all())
+
+        alias = self.kwargs.get('agent_alias')
+        ct = plugins.agent_type(alias)
+        pk = self.kwargs.get('agent_pk')
+
+        filter_kwargs = {'content_type': ct, 'object_id': pk,
+                         'generator': generator}
+        pause = get_object_or_404(queryset, **filter_kwargs)
+
+        # May raise a permission denied
+        self.check_object_permissions(self.request, pause)
+
+        return pause

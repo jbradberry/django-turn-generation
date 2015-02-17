@@ -71,6 +71,10 @@ class GenerationRuleSerializer(serializers.ModelSerializer):
 
 
 class PauseSerializer(serializers.ModelSerializer):
+    content_type = ContentTypeField(read_only=True, default=ReadOnlyDefault())
+    object_id = serializers.IntegerField(read_only=True,
+                                         default=ReadOnlyDefault())
+
     user = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -79,11 +83,15 @@ class PauseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Pause
-        fields = ('user', 'timestamp', 'reason')
+        fields = ('content_type', 'object_id', 'user', 'timestamp', 'reason')
         read_only_fields = ('user', 'timestamp')
 
 
 class ReadySerializer(serializers.ModelSerializer):
+    content_type = ContentTypeField(read_only=True, default=ReadOnlyDefault())
+    object_id = serializers.IntegerField(read_only=True,
+                                         default=ReadOnlyDefault())
+
     user = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -92,7 +100,7 @@ class ReadySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Ready
-        fields = ('user', 'timestamp')
+        fields = ('content_type', 'object_id', 'user', 'timestamp')
         read_only_fields = ('user', 'timestamp')
 
 
