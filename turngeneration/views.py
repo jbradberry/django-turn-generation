@@ -116,3 +116,27 @@ class GenerationRuleView(GeneratorMixin, generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         generator = self.get_generator(models.Generator.objects.all())
         return generator.rules.all()
+
+
+class AgentMixin(object):
+    def get_queryset(self):
+        generator = self.get_generator(models.Generator.objects.all())
+        agent_type = plugins.agent_type(self.kwargs.get('agent_alias'))
+        plugin = plugins.agent_plugin(self.kwargs.get('agent_alias'))
+        if agent_type is None or plugin is None:
+            raise Http404
+
+        queryset = plugin.related_agents(generator.content_object, agent_type)
+        if queryset is None:
+            raise Http404
+        return queryset
+
+
+class AgentListView(GeneratorMixin, AgentMixin, generics.ListAPIView):
+    # /api/starsgame/3/starsrace/
+    serializer_class = serializers.AgentSerializer
+
+
+class AgentRetrieveView(GeneratorMixin, AgentMixin, generics.RetrieveAPIView):
+    # /api/starsgame/3/starsrace/5/
+    serializer_class = serializers.AgentSerializer

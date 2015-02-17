@@ -68,3 +68,60 @@ class GenerationRuleSerializer(serializers.ModelSerializer):
                   'until', 'bysetpos', 'bymonth', 'bymonthday', 'byyearday',
                   'byweekno', 'byweekday', 'byhour', 'byminute')
         read_only_fields = ('id',)
+
+
+class PauseSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+        default=serializers.CurrentUserDefault()
+    )
+
+    class Meta:
+        model = models.Pause
+        fields = ('user', 'timestamp', 'reason')
+        read_only_fields = ('user', 'timestamp')
+
+
+class ReadySerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+        default=serializers.CurrentUserDefault()
+    )
+
+    class Meta:
+        model = models.Ready
+        fields = ('user', 'timestamp')
+        read_only_fields = ('user', 'timestamp')
+
+
+class AgentSerializer(serializers.Serializer):
+    content_type = serializers.SerializerMethodField()
+    object_id = serializers.IntegerField(source='pk')
+    repr = serializers.CharField(source='__repr__')
+
+    pause = serializers.SerializerMethodField(required=False)
+    ready = serializers.SerializerMethodField(required=False)
+
+    def get_content_type(self, obj):
+        ct = ContentType.objects.get_for_model(obj)
+        return u'{ct.app_label}.{ct.model}'.format(ct=ct)
+
+    def get_pause(self, obj):
+        ct = ContentType.objects.get_for_model(obj)
+        try:
+            pause = models.Pause.objects.get(content_type=ct, object_id=obj.pk)
+        except models.Pause.DoesNotExist:
+            return None
+
+        return PauseSerializer(pause).data
+
+    def get_ready(self, obj):
+        ct = ContentType.objects.get_for_model(obj)
+        try:
+            ready = models.Ready.objects.get(content_type=ct, object_id=obj.pk)
+        except models.Ready.DoesNotExist:
+            return None
+
+        return ReadySerializer(ready).data
