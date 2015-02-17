@@ -4,6 +4,9 @@ from django.http import Http404
 from django.conf import settings
 
 from rest_framework import generics, viewsets, mixins
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
 import logging
 
@@ -88,6 +91,18 @@ class GeneratorView(GeneratorMixin, CrudAPIView):
     serializer_class = serializers.GeneratorSerializer
     queryset = models.Generator.objects.all()
 
+    def create(self, request, *args, **kwargs):
+        alias = self.kwargs.get('realm_alias')
+        ct = plugins.realm_type(alias)
+        pk = self.kwargs.get('realm_pk')
+        instance = models.Generator(content_type=ct, object_id=pk)
+
+        serializer = self.get_serializer(instance=instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
         generator = self.get_generator(queryset)
@@ -102,9 +117,15 @@ class GenerationRuleListView(GeneratorMixin, generics.ListCreateAPIView):
     # /api/starsgame/3/generator/rules/
     serializer_class = serializers.GenerationRuleSerializer
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
         generator = self.get_generator(models.Generator.objects.all())
-        serializer.save(generator_id=generator.id)
+        instance = models.GenerationRule(generator=generator)
+
+        serializer = self.get_serializer(instance=instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_queryset(self):
         generator = self.get_generator(models.Generator.objects.all())
@@ -149,15 +170,20 @@ class PauseView(GeneratorMixin, CrudAPIView):
     serializer_class = serializers.PauseSerializer
     queryset = models.Pause.objects.all()
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
         generator = self.get_generator(models.Generator.objects.all())
-
         alias = self.kwargs.get('agent_alias')
         ct = plugins.agent_type(alias)
         pk = self.kwargs.get('agent_pk')
 
-        serializer.save(content_type=ct, object_id=pk,
-                        generator_id=generator.id)
+        instance = models.Pause(generator=generator,
+                                content_type=ct, object_id=pk)
+
+        serializer = self.get_serializer(instance=instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
@@ -182,15 +208,20 @@ class ReadyView(GeneratorMixin, CrudAPIView):
     serializer_class = serializers.ReadySerializer
     queryset = models.Ready.objects.all()
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
         generator = self.get_generator(models.Generator.objects.all())
-
         alias = self.kwargs.get('agent_alias')
         ct = plugins.agent_type(alias)
         pk = self.kwargs.get('agent_pk')
 
-        serializer.save(content_type=ct, object_id=pk,
-                        generator_id=generator.id)
+        instance = models.Ready(generator=generator,
+                                content_type=ct, object_id=pk)
+
+        serializer = self.get_serializer(instance=instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())

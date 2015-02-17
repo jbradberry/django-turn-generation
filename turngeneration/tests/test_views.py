@@ -71,7 +71,10 @@ class PauseViewTestCase(TestCase):
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
 
-        response = self.client.post(realm_url, follow=True)
+        response = self.client.post(realm_url,
+            {'reason': 'laziness'},
+            follow=True
+        )
         self.assertEqual(response.status_code, 404)
 
         response = self.client.delete(realm_url, follow=True)
@@ -92,7 +95,7 @@ class PauseViewTestCase(TestCase):
                                     'agent_pk': self.agent.pk})
 
         response = self.client.get(realm_url)
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
         response = self.client.post(realm_url,
             {'reason': 'laziness'},
@@ -121,7 +124,7 @@ class PauseViewTestCase(TestCase):
                                     'agent_pk': self.agent.pk})
 
         response = self.client.get(realm_url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 404)
 
         response = self.client.post(realm_url,
             {'reason': 'laziness'},
@@ -147,13 +150,13 @@ class PauseViewTestCase(TestCase):
                                     'agent_pk': self.agent.pk})
 
         response = self.client.get(realm_url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 404)
 
         response = self.client.post(realm_url,
             {'reason': 'laziness'},
             follow=True
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
 
         self.assertEqual(models.Pause.objects.count(), 1)
 
@@ -180,8 +183,11 @@ class PauseViewTestCase(TestCase):
             {'reason': 'laziness'},
             follow=True
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "You have already paused.")
+        self.assertContains(response,
+            "The fields content_type, object_id, generator must make a"
+            " unique set.",
+            status_code=400
+        )
 
         self.assertEqual(models.Pause.objects.count(), 1)
 

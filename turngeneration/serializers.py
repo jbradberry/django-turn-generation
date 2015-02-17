@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from rest_framework import serializers
+from rest_framework import serializers, validators
 
 from . import models
 
@@ -74,6 +74,8 @@ class PauseSerializer(serializers.ModelSerializer):
     content_type = ContentTypeField(read_only=True, default=ReadOnlyDefault())
     object_id = serializers.IntegerField(read_only=True,
                                          default=ReadOnlyDefault())
+    generator = serializers.PrimaryKeyRelatedField(read_only=True,
+                                                   default=ReadOnlyDefault())
 
     user = serializers.SlugRelatedField(
         slug_field='username',
@@ -83,14 +85,23 @@ class PauseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Pause
-        fields = ('content_type', 'object_id', 'user', 'timestamp', 'reason')
+        fields = ('content_type', 'object_id', 'generator',
+                  'user', 'timestamp', 'reason')
         read_only_fields = ('user', 'timestamp')
+        validators = [
+            validators.UniqueTogetherValidator(
+                queryset=models.Pause.objects.all(),
+                fields=('content_type', 'object_id', 'generator'),
+            )
+        ]
 
 
 class ReadySerializer(serializers.ModelSerializer):
     content_type = ContentTypeField(read_only=True, default=ReadOnlyDefault())
     object_id = serializers.IntegerField(read_only=True,
                                          default=ReadOnlyDefault())
+    generator = serializers.PrimaryKeyRelatedField(read_only=True,
+                                                   default=ReadOnlyDefault())
 
     user = serializers.SlugRelatedField(
         slug_field='username',
@@ -100,8 +111,15 @@ class ReadySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Ready
-        fields = ('content_type', 'object_id', 'user', 'timestamp')
+        fields = ('content_type', 'object_id', 'generator',
+                  'user', 'timestamp')
         read_only_fields = ('user', 'timestamp')
+        validators = [
+            validators.UniqueTogetherValidator(
+                queryset=models.Ready.objects.all(),
+                fields=('content_type', 'object_id', 'generator'),
+            )
+        ]
 
 
 class AgentSerializer(serializers.Serializer):
