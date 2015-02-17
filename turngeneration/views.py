@@ -175,3 +175,36 @@ class PauseView(GeneratorMixin, CrudAPIView):
         self.check_object_permissions(self.request, pause)
 
         return pause
+
+
+class ReadyView(GeneratorMixin, CrudAPIView):
+    # /api/starsgame/3/starsrace/5/ready/
+    serializer_class = serializers.ReadySerializer
+    queryset = models.Ready.objects.all()
+
+    def perform_create(self, serializer):
+        generator = self.get_generator(models.Generator.objects.all())
+
+        alias = self.kwargs.get('agent_alias')
+        ct = plugins.agent_type(alias)
+        pk = self.kwargs.get('agent_pk')
+
+        serializer.save(content_type=ct, object_id=pk,
+                        generator_id=generator.id)
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        generator = self.get_generator(models.Generator.objects.all())
+
+        alias = self.kwargs.get('agent_alias')
+        ct = plugins.agent_type(alias)
+        pk = self.kwargs.get('agent_pk')
+
+        filter_kwargs = {'content_type': ct, 'object_id': pk,
+                         'generator': generator}
+        ready = get_object_or_404(queryset, **filter_kwargs)
+
+        # May raise a permission denied
+        self.check_object_permissions(self.request, ready)
+
+        return ready

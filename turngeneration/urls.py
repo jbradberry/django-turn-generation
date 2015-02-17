@@ -27,4 +27,7 @@ urlpatterns = patterns('',
     url(r'^(?P<realm_alias>[-\w]+)/(?P<realm_pk>\d+)/(?P<agent_alias>[-\w]+)/(?P<agent_pk>\d+)/pause/$',
         views.PauseView.as_view(),
         name='pause'),
+    url(r'^(?P<realm_alias>[-\w]+)/(?P<realm_pk>\d+)/(?P<agent_alias>[-\w]+)/(?P<agent_pk>\d+)/ready/$',
+        views.ReadyView.as_view(),
+        name='ready'),
 )
