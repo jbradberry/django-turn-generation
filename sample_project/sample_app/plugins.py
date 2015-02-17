@@ -7,6 +7,17 @@ class TurnGeneration(object):
     slug_kwarg = 'agent_slug'
     pk_kwarg = 'agent_pk'
 
+    realm_types = {
+        'testrealm': 'sample_app.testrealm',
+    }
+
+    agent_types = {
+        'testagent': 'sample_app.testagent',
+    }
+
+    def related_agents(self, realm, agent_type):
+        return realm.agents.all()
+
     def _has_permission(self, user, agent):
         return agent.user == user
 
