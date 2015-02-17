@@ -25,6 +25,28 @@ logger = logging.getLogger(__name__)
 # /api/starsgame/3/starsrace/5/ready/
 
 
+class CrudAPIView(mixins.CreateModelMixin,
+                  mixins.RetrieveModelMixin,
+                  mixins.UpdateModelMixin,
+                  mixins.DestroyModelMixin,
+                  generics.GenericAPIView):
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
 class RealmMixin(object):
     serializer_class = serializers.RealmSerializer
     lookup_url_kwarg = 'realm_pk'
@@ -61,30 +83,10 @@ class GeneratorMixin(object):
         return get_object_or_404(queryset, **filter_kwargs)
 
 
-class GeneratorView(GeneratorMixin,
-                    mixins.CreateModelMixin,
-                    mixins.RetrieveModelMixin,
-                    mixins.UpdateModelMixin,
-                    mixins.DestroyModelMixin,
-                    generics.GenericAPIView):
+class GeneratorView(GeneratorMixin, CrudAPIView):
     # /api/starsgame/3/generator/
     serializer_class = serializers.GeneratorSerializer
     queryset = models.Generator.objects.all()
-
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
@@ -142,30 +144,10 @@ class AgentRetrieveView(GeneratorMixin, AgentMixin, generics.RetrieveAPIView):
     serializer_class = serializers.AgentSerializer
 
 
-class PauseView(GeneratorMixin,
-                mixins.CreateModelMixin,
-                mixins.RetrieveModelMixin,
-                mixins.UpdateModelMixin,
-                mixins.DestroyModelMixin,
-                generics.GenericAPIView):
+class PauseView(GeneratorMixin, CrudAPIView):
     # /api/starsgame/3/starsrace/5/pause/
     serializer_class = serializers.PauseSerializer
     queryset = models.Pause.objects.all()
-
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         generator = self.get_generator(models.Generator.objects.all())
