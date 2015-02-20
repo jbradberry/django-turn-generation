@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.conf import settings
@@ -209,6 +209,8 @@ class PauseView(AgentMixin, GeneratorMixin, CrudAPIView):
     def create(self, request, *args, **kwargs):
         generator = self.get_generator(models.Generator.objects.all())
         agent = self.get_agent()
+        if not generator.allow_pauses:
+            raise PermissionDenied
 
         instance = models.Pause(generator=generator, agent=agent)
 

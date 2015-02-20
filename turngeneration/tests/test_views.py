@@ -130,8 +130,7 @@ class PauseViewTestCase(TestCase):
             {'reason': 'laziness'},
             follow=True
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Pauses are not enabled.")
+        self.assertEqual(response.status_code, 403)
 
         self.assertEqual(models.Pause.objects.count(), 0)
 
