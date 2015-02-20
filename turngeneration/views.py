@@ -85,6 +85,16 @@ class GeneratorMixin(object):
         filter_kwargs = {'content_type': ct, 'object_id': pk}
         return get_object_or_404(queryset, **filter_kwargs)
 
+    def get_parent_obj(self):
+        alias = self.kwargs.get('realm_alias')
+        ct = plugins.realm_type(alias)
+        pk = self.kwargs.get('realm_pk')
+
+        try:
+            return ct.get_object_for_this_type(pk=pk)
+        except ObjectDoesNotExist:
+            raise Http404
+
 
 class GeneratorView(GeneratorMixin, CrudAPIView):
     # /api/starsgame/3/generator/
@@ -141,7 +151,7 @@ class GenerationRuleView(GeneratorMixin, generics.RetrieveUpdateDestroyAPIView):
         return generator.rules.all()
 
 
-class AgentMixin(object):
+class RelatedAgentsMixin(object):
     def get_queryset(self):
         generator = self.get_generator(models.Generator.objects.all())
         agent_type = plugins.agent_type(self.kwargs.get('agent_alias'))
@@ -155,17 +165,30 @@ class AgentMixin(object):
         return queryset
 
 
-class AgentListView(GeneratorMixin, AgentMixin, generics.ListAPIView):
+class AgentListView(RelatedAgentsMixin, GeneratorMixin, generics.ListAPIView):
     # /api/starsgame/3/starsrace/
     serializer_class = serializers.AgentSerializer
 
 
-class AgentRetrieveView(GeneratorMixin, AgentMixin, generics.RetrieveAPIView):
+class AgentRetrieveView(RelatedAgentsMixin, GeneratorMixin,
+                        generics.RetrieveAPIView):
     # /api/starsgame/3/starsrace/5/
     serializer_class = serializers.AgentSerializer
 
 
-class PauseView(GeneratorMixin, CrudAPIView):
+class AgentMixin(object):
+    def get_parent_obj(self):
+        alias = self.kwargs.get('agent_alias')
+        ct = plugins.realm_type(alias)
+        pk = self.kwargs.get('agent_pk')
+
+        try:
+            return ct.get_object_for_this_type(pk=pk)
+        except ObjectDoesNotExist:
+            raise Http404
+
+
+class PauseView(AgentMixin, GeneratorMixin, CrudAPIView):
     # /api/starsgame/3/starsrace/5/pause/
     serializer_class = serializers.PauseSerializer
     queryset = models.Pause.objects.all()
@@ -183,7 +206,8 @@ class PauseView(GeneratorMixin, CrudAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data, status=status.HTTP_201_CREATED,
+                        headers=headers)
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
@@ -203,7 +227,7 @@ class PauseView(GeneratorMixin, CrudAPIView):
         return pause
 
 
-class ReadyView(GeneratorMixin, CrudAPIView):
+class ReadyView(AgentMixin, GeneratorMixin, CrudAPIView):
     # /api/starsgame/3/starsrace/5/ready/
     serializer_class = serializers.ReadySerializer
     queryset = models.Ready.objects.all()
