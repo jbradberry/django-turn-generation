@@ -1,15 +1,14 @@
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from pkg_resources import iter_entry_points
+from rest_framework.compat import get_model_name
 
 
 OVERRIDES = getattr(settings, 'TURNGENERATION_OVERRIDES', {})
 
 _realm_types = {}
-_realm_plugins = {}
-
 _agent_types = {}
-_agent_plugins = {}
+_plugins = {}
 
 
 def _populate_realms():
@@ -27,8 +26,8 @@ def _populate_realms():
                 if ct
             )
 
-            _realm_plugins.update(
-                (alias, plugin)
+            _plugins.update(
+                (ct, plugin)
                 for alias, ct in plugin_realm_types.iteritems()
                 if ct
             )
@@ -49,29 +48,29 @@ def _populate_agents():
                 if ct
             )
 
-            _agent_plugins.update(
-                (alias, plugin)
+            _plugins.update(
+                (ct, plugin)
                 for alias, ct in plugin_agent_types.iteritems()
                 if ct
             )
 
 
-def realm_type(name):
-    return _realm_types.get(name)
+def realm_type(alias):
+    return _realm_types.get(alias)
 
 
-def realm_plugin(name):
-    plugin = _realm_plugins.get(name)
+def agent_type(alias):
+    return _agent_types.get(alias)
+
+
+def get_plugin(name):
+    plugin = _plugins.get(name)
     return None if plugin is None else plugin()
 
 
-def agent_type(name):
-    return _agent_types.get(name)
-
-
-def agent_plugin(name):
-    plugin = _agent_plugins.get(name)
-    return None if plugin is None else plugin()
+def get_plugin_for_model(obj):
+    ct = '{0}.{1}'.format(obj._meta.app_label, get_model_name(obj))
+    return get_plugin(ct)
 
 
 _populate_realms()
