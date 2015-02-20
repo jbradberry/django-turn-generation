@@ -39,50 +39,58 @@ class CrudAPIView(mixins.CreateModelMixin,
         return self.destroy(request, *args, **kwargs)
 
 
-class RealmMixin(object):
+class RealmQuerysetMixin(object):
     serializer_class = serializers.RealmSerializer
-    lookup_url_kwarg = 'realm_pk'
-    type_url_kwarg = 'realm_alias'
-
-    def get_type_kwarg(self):
-        return self.type_url_kwarg
 
     def get_queryset(self):
-        alias = self.kwargs.get(self.get_type_kwarg())
-        content_type = plugins.realm_type(alias)
-        if content_type is None:
+        alias = self.kwargs.get('realm_alias')
+        ct = plugins.realm_type(alias)
+        if ct is None:
             raise Http404
-        return content_type.model_class().objects.all()
+        return ct.model_class().objects.all()
 
 
-class RealmListView(RealmMixin, generics.ListAPIView):
+class RealmListView(RealmQuerysetMixin, generics.ListAPIView):
     # /api/starsgame/
     pass
 
 
-class RealmRetrieveView(RealmMixin, generics.RetrieveAPIView):
+class RealmRetrieveView(RealmQuerysetMixin, generics.RetrieveAPIView):
     # /api/starsgame/3/
     pass
 
 
 class GeneratorMixin(object):
     def get_generator(self, queryset):
-        alias = self.kwargs.get('realm_alias')
-        ct = plugins.realm_type(alias)
-        pk = self.kwargs.get('realm_pk')
+        realm = self.get_realm()
 
-        filter_kwargs = {'content_type': ct, 'object_id': pk}
-        return get_object_or_404(queryset, **filter_kwargs)
+        if getattr(self, '_generator', None) is not None:
+            return self._generator
 
-    def get_parent_obj(self):
+        filter_kwargs = {
+            'content_type': ContentType.objects.get_for_model(realm),
+            'object_id': realm.pk
+        }
+        self._generator = get_object_or_404(queryset, **filter_kwargs)
+        return self._generator
+
+    def get_realm(self):
+        if getattr(self, '_realm', None) is not None:
+            return self._realm
+
         alias = self.kwargs.get('realm_alias')
         ct = plugins.realm_type(alias)
         pk = self.kwargs.get('realm_pk')
 
         try:
-            return ct.get_object_for_this_type(pk=pk)
+            self._realm = ct.get_object_for_this_type(pk=pk)
         except ObjectDoesNotExist:
             raise Http404
+
+        return self._realm
+
+    def get_parent_obj(self):
+        return self.get_realm()
 
 
 class GeneratorView(GeneratorMixin, CrudAPIView):
@@ -92,10 +100,8 @@ class GeneratorView(GeneratorMixin, CrudAPIView):
     permission_classes = (PluginPermissions,)
 
     def create(self, request, *args, **kwargs):
-        alias = self.kwargs.get('realm_alias')
-        ct = plugins.realm_type(alias)
-        pk = self.kwargs.get('realm_pk')
-        instance = models.Generator(content_type=ct, object_id=pk)
+        realm = self.get_realm()
+        instance = models.Generator(content_object=realm)
 
         serializer = self.get_serializer(instance=instance, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -143,11 +149,13 @@ class GenerationRuleView(GeneratorMixin, generics.RetrieveUpdateDestroyAPIView):
         return generator.rules.all()
 
 
-class RelatedAgentsMixin(object):
+class AgentQuerysetMixin(object):
     def get_queryset(self):
         generator = self.get_generator(models.Generator.objects.all())
         agent_type = plugins.agent_type(self.kwargs.get('agent_alias'))
-        plugin = plugins.agent_plugin(self.kwargs.get('agent_alias'))
+
+        # TODO: this is clunky, create a better api
+        plugin = plugins.get_plugin_for_model(agent_type.model_class())
         if agent_type is None or plugin is None:
             raise Http404
 
@@ -157,32 +165,39 @@ class RelatedAgentsMixin(object):
         return queryset
 
 
-class AgentListView(RelatedAgentsMixin, GeneratorMixin, generics.ListAPIView):
+class AgentListView(AgentQuerysetMixin, GeneratorMixin, generics.ListAPIView):
     # /api/starsgame/3/starsrace/
     serializer_class = serializers.AgentSerializer
 
 
-class AgentRetrieveView(RelatedAgentsMixin, GeneratorMixin,
+class AgentRetrieveView(AgentQuerysetMixin, GeneratorMixin,
                         generics.RetrieveAPIView):
     # /api/starsgame/3/starsrace/5/
     serializer_class = serializers.AgentSerializer
 
 
 class AgentMixin(object):
-    def get_parent_obj(self):
-        # TODO: relate the agent to the realm
-        realm = GeneratorMixin.get_parent_obj(self)
+    def get_agent(self):
+        realm = self.get_realm()
+        generator = self.get_generator(models.Generator.objects.all())
+
+        if getattr(self, '_agent', None) is not None:
+            return self._agent
 
         alias = self.kwargs.get('agent_alias')
         ct = plugins.agent_type(alias)
         pk = self.kwargs.get('agent_pk')
 
-        try:
-            agent = ct.get_object_for_this_type(pk=pk)
-        except ObjectDoesNotExist:
+        plugin = plugins.get_plugin_for_model(ct.model_class())
+        qs = plugin.related_agents(realm, ct)
+        if qs is None:
             raise Http404
 
-        return agent
+        self._agent = get_object_or_404(qs, pk=pk)
+        return self._agent
+
+    def get_parent_obj(self):
+        return self.get_agent()
 
 
 class PauseView(AgentMixin, GeneratorMixin, CrudAPIView):
@@ -193,12 +208,9 @@ class PauseView(AgentMixin, GeneratorMixin, CrudAPIView):
 
     def create(self, request, *args, **kwargs):
         generator = self.get_generator(models.Generator.objects.all())
-        alias = self.kwargs.get('agent_alias')
-        ct = plugins.agent_type(alias)
-        pk = self.kwargs.get('agent_pk')
+        agent = self.get_agent()
 
-        instance = models.Pause(generator=generator,
-                                content_type=ct, object_id=pk)
+        instance = models.Pause(generator=generator, agent=agent)
 
         serializer = self.get_serializer(instance=instance, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -210,13 +222,12 @@ class PauseView(AgentMixin, GeneratorMixin, CrudAPIView):
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
         generator = self.get_generator(models.Generator.objects.all())
+        agent = self.get_agent()
 
-        alias = self.kwargs.get('agent_alias')
-        ct = plugins.agent_type(alias)
-        pk = self.kwargs.get('agent_pk')
-
-        filter_kwargs = {'content_type': ct, 'object_id': pk,
-                         'generator': generator}
+        filter_kwargs = {
+            'content_type': ContentType.objects.get_for_model(agent),
+            'object_id': agent.pk, 'generator': generator
+        }
         pause = get_object_or_404(queryset, **filter_kwargs)
 
         # May raise a permission denied
@@ -233,12 +244,9 @@ class ReadyView(AgentMixin, GeneratorMixin, CrudAPIView):
 
     def create(self, request, *args, **kwargs):
         generator = self.get_generator(models.Generator.objects.all())
-        alias = self.kwargs.get('agent_alias')
-        ct = plugins.agent_type(alias)
-        pk = self.kwargs.get('agent_pk')
+        agent = self.get_agent()
 
-        instance = models.Ready(generator=generator,
-                                content_type=ct, object_id=pk)
+        instance = models.Ready(generator=generator, agent=agent)
 
         serializer = self.get_serializer(instance=instance, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -249,13 +257,12 @@ class ReadyView(AgentMixin, GeneratorMixin, CrudAPIView):
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
         generator = self.get_generator(models.Generator.objects.all())
+        agent = self.get_agent()
 
-        alias = self.kwargs.get('agent_alias')
-        ct = plugins.agent_type(alias)
-        pk = self.kwargs.get('agent_pk')
-
-        filter_kwargs = {'content_type': ct, 'object_id': pk,
-                         'generator': generator}
+        filter_kwargs = {
+            'content_type': ContentType.objects.get_for_model(agent),
+            'object_id': agent.pk, 'generator': generator
+        }
         ready = get_object_or_404(queryset, **filter_kwargs)
 
         # May raise a permission denied
