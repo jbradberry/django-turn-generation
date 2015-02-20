@@ -2,11 +2,6 @@ from . import models
 
 
 class TurnGeneration(object):
-    slug_field = 'slug'
-
-    slug_kwarg = 'agent_slug'
-    pk_kwarg = 'agent_pk'
-
     realm_types = {
         'testrealm': 'sample_app.testrealm',
     }
@@ -15,34 +10,32 @@ class TurnGeneration(object):
         'testagent': 'sample_app.testagent',
     }
 
+    permissions = {
+        'turngeneration.add_generator': '_is_host',
+        'turngeneration.change_generator': '_is_host',
+        'turngeneration.delete_generator': '_is_host',
+        'turngeneration.add_generation_rule': '_is_host',
+        'turngeneration.change_generation_rule': '_is_host',
+        'turngeneration.delete_generation_rule': '_is_host',
+        'turngeneration.add_pause': '_is_player',
+        'turngeneration.change_pause': '_is_player',
+        'turngeneration.delete_pause': '_is_player',
+        'turngeneration.add_ready': '_is_player',
+        'turngeneration.change_ready': '_is_player',
+        'turngeneration.delete_ready': '_is_player',
+    }
+
     def related_agents(self, realm, agent_type):
         return realm.agents.all()
 
-    def _has_permission(self, user, agent):
-        return agent.user == user
+    def has_perm(self, user, perm, obj):
+        pass
 
-    def has_pause_permission(self, user, agent):
-        return self._has_permission(user, agent)
+    def _is_host(self, user, obj):
+        return user.is_staff
 
-    def has_unpause_permission(self, user, agent):
-        return self._has_permission(user, agent)
-
-    def has_ready_permission(self, user, agent):
-        return self._has_permission(user, agent)
-
-    def has_unready_permission(self, user, agent):
-        return self._has_permission(user, agent)
-
-    def get_agent(self, realm, kw):
-        filters = {}
-        if self.slug_kwarg in kw:
-            filters[self.slug_field] = kw[self.slug_kwarg]
-        if self.pk_kwarg in kw:
-            filters['pk'] = kw[self.pk_kwarg]
-
-        qs = realm.agents.filter(**filters)
-        if qs:
-            return qs[0]
+    def _is_player(self, user, obj):
+        return obj.user == user
 
     def auto_generate(self, realm):
         realm.generate()

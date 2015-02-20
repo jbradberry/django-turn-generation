@@ -171,7 +171,7 @@ class AgentRetrieveView(RelatedAgentsMixin, GeneratorMixin,
 class AgentMixin(object):
     def get_parent_obj(self):
         alias = self.kwargs.get('agent_alias')
-        ct = plugins.realm_type(alias)
+        ct = plugins.agent_type(alias)
         pk = self.kwargs.get('agent_pk')
 
         try:
