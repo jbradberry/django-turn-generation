@@ -170,14 +170,19 @@ class AgentRetrieveView(RelatedAgentsMixin, GeneratorMixin,
 
 class AgentMixin(object):
     def get_parent_obj(self):
+        # TODO: relate the agent to the realm
+        realm = GeneratorMixin.get_parent_obj(self)
+
         alias = self.kwargs.get('agent_alias')
         ct = plugins.agent_type(alias)
         pk = self.kwargs.get('agent_pk')
 
         try:
-            return ct.get_object_for_this_type(pk=pk)
+            agent = ct.get_object_for_this_type(pk=pk)
         except ObjectDoesNotExist:
             raise Http404
+
+        return agent
 
 
 class PauseView(AgentMixin, GeneratorMixin, CrudAPIView):
