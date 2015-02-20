@@ -11,7 +11,7 @@ class TurnGenerationBackend(object):
     def has_perm(self, user_obj, perm, obj=None):
         if obj is None:
             return False
-        plugin = plugins.get(obj._meta.app_label)
+        plugin = plugins.get_plugin_for_model(obj)
         if plugin is None:
             return False
 

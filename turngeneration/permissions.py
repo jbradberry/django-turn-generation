@@ -2,6 +2,20 @@ from rest_framework import permissions
 
 
 class PluginPermissions(permissions.DjangoObjectPermissions):
+    """
+    The request is authenticated using Django's object-level permissions.
+    It requires an object-permissions-enabled backend, usually
+    turngeneration.backends.TurnGenerationBackend.
+
+    It ensures that the user is authenticated, and has the appropriate
+    `add`/`change`/`delete` permissions on the parent object (e.g. the agent
+    for Pause views) using .has_perms.
+
+    This permission can only be applied against view classes that
+    provide a `.model` or `.queryset` attribute.
+
+    """
+
     def has_permission(self, request, view):
         # Note that `.model` attribute on views is deprecated, although we
         # enforce the deprecation on the view `get_serializer_class()` and
@@ -22,12 +36,12 @@ class PluginPermissions(permissions.DjangoObjectPermissions):
 
         perms = self.get_required_permissions(request.method, model_cls)
 
-        proxy = view.get_proxy()
+        parent = view.get_parent_obj()
 
         return (
             request.user and
             (request.user.is_authenticated() or not self.authenticated_users_only) and
-            request.user.has_perms(perms, proxy) # FIXME
+            request.user.has_perms(perms, parent)
         )
 
     def has_object_permission(self, request, view, obj):
@@ -40,9 +54,9 @@ class PluginPermissions(permissions.DjangoObjectPermissions):
         perms = self.get_required_object_permissions(request.method, model_cls)
         user = request.user
 
-        proxy = view.get_proxy()
+        parent = view.get_parent_obj()
 
-        if not user.has_perms(perms, proxy):
+        if not user.has_perms(perms, parent):
             # If the user does not have permissions we need to determine if
             # they have read permissions to see 403, or not, and simply see
             # a 404 response.
@@ -53,7 +67,7 @@ class PluginPermissions(permissions.DjangoObjectPermissions):
                 raise Http404
 
             read_perms = self.get_required_object_permissions('GET', model_cls)
-            if not user.has_perms(read_perms, proxy):
+            if not user.has_perms(read_perms, parent):
                 raise Http404
 
             # Has read permissions.
