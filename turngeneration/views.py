@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.conf import settings
@@ -11,21 +12,9 @@ from rest_framework.settings import api_settings
 import logging
 
 from . import models, forms, plugins, serializers
+from .permissions import PluginPermissions
 
 logger = logging.getLogger(__name__)
-
-
-# new url scheme:
-
-# /api/starsgame/
-# /api/starsgame/3/
-# /api/starsgame/3/generator/
-# /api/starsgame/3/generator/rules/
-# /api/starsgame/3/generator/rules/7/
-# /api/starsgame/3/starsrace/
-# /api/starsgame/3/starsrace/5/
-# /api/starsgame/3/starsrace/5/pause/
-# /api/starsgame/3/starsrace/5/ready/
 
 
 class CrudAPIView(mixins.CreateModelMixin,
@@ -100,6 +89,7 @@ class GeneratorView(GeneratorMixin, CrudAPIView):
     # /api/starsgame/3/generator/
     serializer_class = serializers.GeneratorSerializer
     queryset = models.Generator.objects.all()
+    permission_classes = (PluginPermissions,)
 
     def create(self, request, *args, **kwargs):
         alias = self.kwargs.get('realm_alias')
@@ -126,6 +116,7 @@ class GeneratorView(GeneratorMixin, CrudAPIView):
 class GenerationRuleListView(GeneratorMixin, generics.ListCreateAPIView):
     # /api/starsgame/3/generator/rules/
     serializer_class = serializers.GenerationRuleSerializer
+    permission_classes = (PluginPermissions,)
 
     def create(self, request, *args, **kwargs):
         generator = self.get_generator(models.Generator.objects.all())
@@ -145,6 +136,7 @@ class GenerationRuleListView(GeneratorMixin, generics.ListCreateAPIView):
 class GenerationRuleView(GeneratorMixin, generics.RetrieveUpdateDestroyAPIView):
     # /api/starsgame/3/generator/rules/7/
     serializer_class = serializers.GenerationRuleSerializer
+    permission_classes = (PluginPermissions,)
 
     def get_queryset(self):
         generator = self.get_generator(models.Generator.objects.all())
@@ -192,6 +184,7 @@ class PauseView(AgentMixin, GeneratorMixin, CrudAPIView):
     # /api/starsgame/3/starsrace/5/pause/
     serializer_class = serializers.PauseSerializer
     queryset = models.Pause.objects.all()
+    permission_classes = (PluginPermissions,)
 
     def create(self, request, *args, **kwargs):
         generator = self.get_generator(models.Generator.objects.all())
@@ -231,6 +224,7 @@ class ReadyView(AgentMixin, GeneratorMixin, CrudAPIView):
     # /api/starsgame/3/starsrace/5/ready/
     serializer_class = serializers.ReadySerializer
     queryset = models.Ready.objects.all()
+    permission_classes = (PluginPermissions,)
 
     def create(self, request, *args, **kwargs):
         generator = self.get_generator(models.Generator.objects.all())
