@@ -191,10 +191,51 @@ class PauseViewTestCase(TestCase):
         self.assertEqual(models.Pause.objects.count(), 1)
 
     def test_pauses_not_allowed_can_still_unpause(self):
-        pass
+        generator = models.Generator(content_object=self.realm,
+                                     allow_pauses=False)
+        generator.save()
+        self.agent.user = self.user
+        self.agent.save()
+
+        pause = models.Pause(agent=self.agent, generator=generator)
+        pause.save()
+        self.assertEqual(models.Pause.objects.count(), 1)
+
+        realm_url = reverse('pause',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'agent_pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.delete(realm_url, follow=True)
+        self.assertEqual(response.status_code, 204)
+
+        self.assertEqual(models.Pause.objects.count(), 0)
 
     def test_already_unpaused(self):
-        pass
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+        self.agent.user = self.user
+        self.agent.save()
+
+        self.assertEqual(models.Pause.objects.count(), 0)
+
+        realm_url = reverse('pause',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'agent_pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(models.Pause.objects.count(), 0)
 
 
 class ReadyViewTestCase(TestCase):
