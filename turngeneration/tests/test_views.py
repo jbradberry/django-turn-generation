@@ -203,7 +203,94 @@ class GenerationRuleListViewTestCase(APITestCase):
 
 
 class GenerationRuleViewTestCase(APITestCase):
-    pass
+    def setUp(self):
+        self.user = User.objects.create_user(username='test',
+                                             password='password')
+        self.realm = TestRealm(slug='500years')
+        self.realm.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
+        self.client.login(username='test', password='password')
+        self.generator = models.Generator(content_object=self.realm)
+        self.generator.save()
+        self.rule = models.GenerationRule(generator=self.generator)
+        self.rule.save()
+
+    def test_realm_type_does_not_exist(self):
+        url = reverse('generation_rule_detail',
+                      kwargs={'realm_alias': 'starsgame',
+                              'realm_pk': 1,
+                              'pk': self.rule.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_realm_does_not_exist(self):
+        url = reverse('generation_rule_detail',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk + 1,
+                              'pk': self.rule.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_generator_does_not_exist(self):
+        self.generator.delete()
+
+        url = reverse('generation_rule_detail',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk,
+                              'pk': 1})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_rule_does_not_exist(self):
+        url = reverse('generation_rule_detail',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk,
+                              'pk': self.rule.pk + 1})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_rule_exists(self):
+        url = reverse('generation_rule_detail',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk,
+                              'pk': self.rule.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('id'), self.rule.id)
+        self.assertEqual(response.data.get('generator_id'),
+                         self.generator.id)
+
+    def test_user_does_not_have_permission(self):
+        url = reverse('generation_rule_detail',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk,
+                              'pk': self.rule.pk})
+
+        response = self.client.put(url, {'freq': 2}, follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('freq'), 3)
+
+    def test_user_has_permission(self):
+        self.user.is_staff = True
+        self.user.save()
+
+        url = reverse('generation_rule_detail',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk,
+                              'pk': self.rule.pk})
+
+        response = self.client.put(url, {'freq': 2}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('freq'), 2)
 
 
 class AgentListViewTestCase(APITestCase):
