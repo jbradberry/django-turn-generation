@@ -33,7 +33,40 @@ class RealmListViewTestCase(APITestCase):
 
 
 class RealmRetrieveViewTestCase(APITestCase):
-    pass
+    def setUp(self):
+        self.user = User.objects.create_user(username='test',
+                                             password='password')
+        self.realm = TestRealm(slug='500years')
+        self.realm.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
+        self.client.login(username='test', password='password')
+
+    def test_realm_type_does_not_exist(self):
+        url = reverse('realm_detail',
+                      kwargs={'realm_alias': 'starsweb',
+                              'pk': 1})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_realm_does_not_exist(self):
+        url = reverse('realm_detail',
+                      kwargs={'realm_alias': 'testrealm',
+                              'pk': self.realm.pk + 1})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_success(self):
+        url = reverse('realm_detail',
+                      kwargs={'realm_alias': 'testrealm',
+                              'pk': self.realm.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('content_type'),
+                         "sample_app.testrealm")
 
 
 class GeneratorViewTestCase(APITestCase):
