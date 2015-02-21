@@ -166,6 +166,9 @@ class AgentQuerysetMixin(object):
         generator = self.get_generator(models.Generator.objects.all())
         agent_type = plugins.agent_type(self.kwargs.get('agent_alias'))
 
+        if agent_type is None:
+            raise Http404
+
         # TODO: this is clunky, create a better api
         plugin = plugins.get_plugin_for_model(agent_type.model_class())
         if agent_type is None or plugin is None:

@@ -206,9 +206,6 @@ class GenerationRuleViewTestCase(APITestCase):
     pass
 
 
-# TODO: test for realm type not existing
-# TODO: test for agent type not existing
-
 class AgentListViewTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='test',
@@ -218,6 +215,15 @@ class AgentListViewTestCase(APITestCase):
         self.agent = TestAgent(realm=self.realm, slug='bob')
         self.agent.save()
         self.client.login(username='test', password='password')
+
+    def test_realm_type_does_not_exist(self):
+        realm_url = reverse('agent_list',
+                            kwargs={'realm_alias': 'starsweb',
+                                    'realm_pk': 1,
+                                    'agent_alias': 'testagent'})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
 
     def test_realm_does_not_exist(self):
         realm_url = reverse('agent_list',
@@ -233,6 +239,15 @@ class AgentListViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent'})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_agent_type_does_not_exist(self):
+        realm_url = reverse('agent_list',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'starsrace'})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -261,6 +276,16 @@ class AgentRetrieveViewTestCase(APITestCase):
         self.agent.save()
         self.client.login(username='test', password='password')
 
+    def test_realm_type_does_not_exist(self):
+        realm_url = reverse('agent_detail',
+                            kwargs={'realm_alias': 'starsgame',
+                                    'realm_pk': 1,
+                                    'agent_alias': 'testagent',
+                                    'pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
     def test_realm_does_not_exist(self):
         realm_url = reverse('agent_detail',
                             kwargs={'realm_alias': 'testrealm',
@@ -277,6 +302,19 @@ class AgentRetrieveViewTestCase(APITestCase):
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
                                     'pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_agent_type_does_not_exist(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        realm_url = reverse('agent_detail',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'starsrace',
+                                    'pk': 1})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -384,6 +422,26 @@ class PauseViewTestCase(APITestCase):
         self.agent.save()
         self.client.login(username='test', password='password')
 
+    def test_realm_type_does_not_exist(self):
+        self.assertEqual(models.Pause.objects.count(), 0)
+
+        realm_url = reverse('pause',
+                            kwargs={'realm_alias': 'starsgame',
+                                    'realm_pk': 1,
+                                    'agent_alias': 'testagent',
+                                    'agent_pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(models.Pause.objects.count(), 0)
+
     def test_realm_does_not_exist(self):
         self.assertEqual(models.Pause.objects.count(), 0)
 
@@ -417,6 +475,32 @@ class PauseViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
         response = self.client.post(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(models.Pause.objects.count(), 0)
+
+    def test_agent_type_does_not_exist(self):
+        self.assertEqual(models.Pause.objects.count(), 0)
+
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        realm_url = reverse('pause',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'starsrace',
+                                    'agent_pk': 1})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(realm_url,
+            {'reason': 'laziness'},
+            follow=True
+        )
         self.assertEqual(response.status_code, 404)
 
         response = self.client.delete(realm_url, follow=True)
@@ -618,6 +702,26 @@ class ReadyViewTestCase(APITestCase):
         self.agent.save()
         self.client.login(username='test', password='password')
 
+    def test_realm_type_does_not_exist(self):
+        self.assertEqual(models.Ready.objects.count(), 0)
+
+        realm_url = reverse('ready',
+                            kwargs={'realm_alias': 'starsgame',
+                                    'realm_pk': 1,
+                                    'agent_alias': 'testagent',
+                                    'agent_pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(models.Ready.objects.count(), 0)
+
     def test_realm_does_not_exist(self):
         self.assertEqual(models.Ready.objects.count(), 0)
 
@@ -646,6 +750,29 @@ class ReadyViewTestCase(APITestCase):
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
                                     'agent_pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(models.Ready.objects.count(), 0)
+
+    def test_agent_type_does_not_exist(self):
+        self.assertEqual(models.Ready.objects.count(), 0)
+
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        realm_url = reverse('ready',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'starsrace',
+                                    'agent_pk': 1})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
