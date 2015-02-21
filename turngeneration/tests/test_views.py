@@ -6,6 +6,51 @@ from .. import models
 from sample_project.sample_app.models import TestRealm, TestAgent
 
 
+class RealmListViewTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='test',
+                                             password='password')
+        self.realm = TestRealm(slug='500years')
+        self.realm.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
+        self.client.login(username='test', password='password')
+
+    def test_realm_type_does_not_exist(self):
+        url = reverse('realm_list',
+                      kwargs={'realm_alias': 'starsweb'})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_success(self):
+        url = reverse('realm_list',
+                      kwargs={'realm_alias': 'testrealm'})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+
+
+class RealmRetrieveViewTestCase(APITestCase):
+    pass
+
+
+class GeneratorViewTestCase(APITestCase):
+    pass
+
+
+class GenerationRuleListViewTestCase(APITestCase):
+    pass
+
+
+class GenerationRuleViewTestCase(APITestCase):
+    pass
+
+
+# TODO: test for realm type not existing
+# TODO: test for agent type not existing
+
 class AgentListViewTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='test',
