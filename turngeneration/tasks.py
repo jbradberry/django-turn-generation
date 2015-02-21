@@ -48,7 +48,7 @@ def timed_generation(pk):
         return
 
     try:
-        plugin = plugins.all_plugins[realm_type.app_label]
+        plugin = plugins.get_plugin_for_model(realm)
         plugin.force_generate(realm)
     except Exception as e:
         logger.exception(
@@ -101,7 +101,7 @@ def ready_generation(pk):
         Generator.objects.filter(pk=pk).update(generating=False)
         return
 
-    if not plugin.is_ready(realm):
+    if not plugin.is_ready(generator):
         logger.info(
             "Not ready for auto-generation on {app}.{model}(pk={pk}),"
             " aborting.".format(
@@ -111,7 +111,7 @@ def ready_generation(pk):
         return
 
     try:
-        plugin = plugins.all_plugins[realm_type.app_label]
+        plugin = plugins.get_plugin_for_model(realm)
         plugin.auto_generate(realm)
     except Exception as e:
         logger.exception(
