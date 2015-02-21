@@ -385,7 +385,50 @@ class ReadyViewTestCase(TestCase):
         self.assertEqual(models.Ready.objects.count(), 1)
 
     def test_can_mark_ready_while_paused(self):
-        pass
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+        self.agent.user = self.user
+        self.agent.save()
+
+        pause = models.Pause(agent=self.agent, generator=generator,
+                             reason='laziness')
+        pause.save()
+        self.assertEqual(models.Ready.objects.count(), 0)
+        self.assertEqual(models.Pause.objects.count(), 1)
+
+        realm_url = reverse('ready',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'agent_pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(realm_url, follow=True)
+        self.assertEqual(response.status_code, 201)
+
+        self.assertEqual(models.Ready.objects.count(), 1)
+        self.assertEqual(models.Pause.objects.count(), 1)
 
     def test_already_unready(self):
-        pass
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+        self.agent.user = self.user
+        self.agent.save()
+
+        self.assertEqual(models.Ready.objects.count(), 0)
+
+        realm_url = reverse('ready',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'agent_pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(realm_url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(models.Ready.objects.count(), 0)
