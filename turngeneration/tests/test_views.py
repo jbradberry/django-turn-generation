@@ -69,7 +69,6 @@ class RealmRetrieveViewTestCase(APITestCase):
                          "sample_app.testrealm")
 
 
-# TODO: add post checks
 class GeneratorViewTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='test',
@@ -88,12 +87,30 @@ class GeneratorViewTestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
+        response = self.client.post(url, {}, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.put(url, {}, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
     def test_realm_does_not_exist(self):
         url = reverse('generator',
                       kwargs={'realm_alias': 'testrealm',
                               'realm_pk': self.realm.pk + 1})
 
         response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(url, {}, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.put(url, {}, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(url, follow=True)
         self.assertEqual(response.status_code, 404)
 
     def test_generator_does_not_exist(self):
@@ -104,7 +121,7 @@ class GeneratorViewTestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
-    def test_success(self):
+    def test_user_does_not_have_permission(self):
         generator = models.Generator(content_object=self.realm)
         generator.save()
 
@@ -116,6 +133,46 @@ class GeneratorViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data.get('content_type'),
                          "sample_app.testrealm")
+
+        response = self.client.post(url, {}, follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.put(url, {}, follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.delete(url, follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        self.assertEqual(models.Generator.objects.count(), 1)
+
+    def test_success(self):
+        self.user.is_staff = True
+        self.user.save()
+
+        url = reverse('generator',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(url, {'allow_pauses': True},
+                                    follow=True)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data.get('allow_pauses'), True)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('allow_pauses'), True)
+
+        response = self.client.put(url, {}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('allow_pauses'), False)
+
+        response = self.client.delete(url, follow=True)
+        self.assertEqual(response.status_code, 204)
+
+        self.assertEqual(models.Generator.objects.count(), 0)
 
 
 class GenerationRuleListViewTestCase(APITestCase):
@@ -225,6 +282,12 @@ class GenerationRuleViewTestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
+        response = self.client.put(url, {}, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(url, follow=True)
+        self.assertEqual(response.status_code, 404)
+
     def test_realm_does_not_exist(self):
         url = reverse('generation_rule_detail',
                       kwargs={'realm_alias': 'testrealm',
@@ -232,6 +295,12 @@ class GenerationRuleViewTestCase(APITestCase):
                               'pk': self.rule.pk})
 
         response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.put(url, {}, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.delete(url, follow=True)
         self.assertEqual(response.status_code, 404)
 
     def test_generator_does_not_exist(self):
@@ -245,6 +314,13 @@ class GenerationRuleViewTestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
+        # TODO: do we want a 403 when the generator doesn't exist?
+        response = self.client.put(url, {}, follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.delete(url, follow=True)
+        self.assertEqual(response.status_code, 403)
+
     def test_rule_does_not_exist(self):
         url = reverse('generation_rule_detail',
                       kwargs={'realm_alias': 'testrealm',
@@ -253,6 +329,13 @@ class GenerationRuleViewTestCase(APITestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+
+        # TODO: do we want a 403 when the rule doesn't exist?
+        response = self.client.put(url, {}, follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.delete(url, follow=True)
+        self.assertEqual(response.status_code, 403)
 
     def test_rule_exists(self):
         url = reverse('generation_rule_detail',
@@ -776,7 +859,30 @@ class PauseViewTestCase(APITestCase):
 
         self.assertEqual(models.Pause.objects.count(), 0)
 
-    # TODO: test can pause while marked ready
+    def test_can_pause_while_ready(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+        self.agent.user = self.user
+        self.agent.save()
+
+        ready = models.Ready(agent=self.agent, generator=generator)
+        ready.save()
+        self.assertEqual(models.Ready.objects.count(), 1)
+
+        realm_url = reverse('pause',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'agent_pk': self.agent.pk})
+
+        response = self.client.post(realm_url,
+            {'reason': 'laziness'},
+            follow=True
+        )
+        self.assertEqual(response.status_code, 201)
+
+        self.assertEqual(models.Ready.objects.count(), 1)
+        self.assertEqual(models.Pause.objects.count(), 1)
 
 
 class ReadyViewTestCase(APITestCase):
@@ -895,12 +1001,11 @@ class ReadyViewTestCase(APITestCase):
 
         self.assertEqual(models.Ready.objects.count(), 0)
 
-    # TODO: add an actual ready object to attempt to delete
     def test_user_does_not_have_permission(self):
-        self.assertEqual(models.Ready.objects.count(), 0)
-
         generator = models.Generator(content_object=self.realm)
         generator.save()
+
+        self.assertEqual(models.Ready.objects.count(), 0)
 
         realm_url = reverse('ready',
                             kwargs={'realm_alias': 'testrealm',
@@ -914,10 +1019,18 @@ class ReadyViewTestCase(APITestCase):
         response = self.client.post(realm_url, follow=True)
         self.assertEqual(response.status_code, 403)
 
+        self.assertEqual(models.Ready.objects.count(), 0)
+
+        ready = models.Ready(agent=self.agent, generator=generator)
+        ready.save()
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 200)
+
         response = self.client.delete(realm_url, follow=True)
         self.assertEqual(response.status_code, 403)
 
-        self.assertEqual(models.Ready.objects.count(), 0)
+        self.assertEqual(models.Ready.objects.count(), 1)
 
     def test_success(self):
         self.assertEqual(models.Ready.objects.count(), 0)
