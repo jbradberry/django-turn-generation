@@ -125,6 +125,7 @@ class GeneratorView(GeneratorMixin, CrudAPIView):
 class GenerationRuleListView(GeneratorMixin, generics.ListCreateAPIView):
     # /api/starsgame/3/generator/rules/
     serializer_class = serializers.GenerationRuleSerializer
+    queryset = models.GenerationRule.objects.all()
     permission_classes = (PluginPermissions,)
 
     def create(self, request, *args, **kwargs):
@@ -141,10 +142,18 @@ class GenerationRuleListView(GeneratorMixin, generics.ListCreateAPIView):
         generator = self.get_generator(models.Generator.objects.all())
         return generator.rules.all()
 
+    def get_parent_obj(self):
+        realm = self.get_realm()
+        # Make sure that the Generator actually exists before checking
+        # permissions.
+        self.get_generator(models.Generator.objects.all())
+        return realm
+
 
 class GenerationRuleView(GeneratorMixin, generics.RetrieveUpdateDestroyAPIView):
     # /api/starsgame/3/generator/rules/7/
     serializer_class = serializers.GenerationRuleSerializer
+    queryset = models.GenerationRule.objects.all()
     permission_classes = (PluginPermissions,)
 
     def get_queryset(self):

@@ -69,6 +69,7 @@ class RealmRetrieveViewTestCase(APITestCase):
                          "sample_app.testrealm")
 
 
+# TODO: add post checks
 class GeneratorViewTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='test',
@@ -118,7 +119,87 @@ class GeneratorViewTestCase(APITestCase):
 
 
 class GenerationRuleListViewTestCase(APITestCase):
-    pass
+    def setUp(self):
+        self.user = User.objects.create_user(username='test',
+                                             password='password')
+        self.realm = TestRealm(slug='500years')
+        self.realm.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
+        self.client.login(username='test', password='password')
+
+    def test_realm_type_does_not_exist(self):
+        url = reverse('generation_rules_list',
+                      kwargs={'realm_alias': 'starsweb',
+                              'realm_pk': 1})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(url, {}, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+    def test_realm_does_not_exist(self):
+        url = reverse('generation_rules_list',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk + 1})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(url, {}, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+    def test_generator_does_not_exist(self):
+        url = reverse('generation_rules_list',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(url, {}, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+    def test_user_does_not_have_permission(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        url = reverse('generation_rules_list',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.post(url, {}, follow=True)
+        self.assertEqual(response.status_code, 403)
+
+        self.assertEqual(models.GenerationRule.objects.count(), 0)
+
+    def test_success(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+        self.user.is_staff = True
+        self.user.save()
+
+        url = reverse('generation_rules_list',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.post(url, {}, follow=True)
+        self.assertEqual(response.status_code, 201)
+
+        self.assertEqual(models.GenerationRule.objects.count(), 1)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
 
 
 class GenerationRuleViewTestCase(APITestCase):
