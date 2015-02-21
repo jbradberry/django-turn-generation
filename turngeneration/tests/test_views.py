@@ -1,12 +1,135 @@
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
-from django.test import TestCase
+from rest_framework.test import APITestCase
 
 from .. import models
 from sample_project.sample_app.models import TestRealm, TestAgent
 
 
-class PauseViewTestCase(TestCase):
+class AgentRetrieveViewTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='test',
+                                             password='password')
+        self.realm = TestRealm(slug='500years')
+        self.realm.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
+        self.client.login(username='test', password='password')
+
+    def test_realm_does_not_exist(self):
+        realm_url = reverse('agent_detail',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk + 1,
+                                    'agent_alias': 'testagent',
+                                    'pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_generator_does_not_exist(self):
+        realm_url = reverse('agent_detail',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_agent_does_not_exist(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        realm_url = reverse('agent_detail',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'pk': self.agent.pk + 1})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_unpaused_unready(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        realm_url = reverse('agent_detail',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('content_type'), 'sample_app.testagent')
+        self.assertIsNone(response.data.get('pause'))
+        self.assertIsNone(response.data.get('ready'))
+
+    def test_unpaused_ready(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        ready = models.Ready(agent=self.agent, generator=generator,
+                             user=self.user)
+        ready.save()
+
+        realm_url = reverse('agent_detail',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('content_type'), 'sample_app.testagent')
+        self.assertIsNone(response.data.get('pause'))
+        self.assertIsNotNone(response.data.get('ready'))
+
+    def test_paused_unready(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        pause = models.Pause(agent=self.agent, generator=generator,
+                             user=self.user)
+        pause.save()
+
+        realm_url = reverse('agent_detail',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('content_type'), 'sample_app.testagent')
+        self.assertIsNotNone(response.data.get('pause'))
+        self.assertIsNone(response.data.get('ready'))
+
+    def test_paused_ready(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        pause = models.Pause(agent=self.agent, generator=generator,
+                             user=self.user)
+        pause.save()
+        ready = models.Ready(agent=self.agent, generator=generator,
+                             user=self.user)
+        ready.save()
+
+        realm_url = reverse('agent_detail',
+                            kwargs={'realm_alias': 'testrealm',
+                                    'realm_pk': self.realm.pk,
+                                    'agent_alias': 'testagent',
+                                    'pk': self.agent.pk})
+
+        response = self.client.get(realm_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('content_type'), 'sample_app.testagent')
+        self.assertIsNotNone(response.data.get('pause'))
+        self.assertIsNotNone(response.data.get('ready'))
+
+
+class PauseViewTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='test',
                                              password='password')
@@ -237,8 +360,10 @@ class PauseViewTestCase(TestCase):
 
         self.assertEqual(models.Pause.objects.count(), 0)
 
+    # TODO: test can pause while marked ready
 
-class ReadyViewTestCase(TestCase):
+
+class ReadyViewTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='test',
                                              password='password')
@@ -311,6 +436,7 @@ class ReadyViewTestCase(TestCase):
 
         self.assertEqual(models.Ready.objects.count(), 0)
 
+    # TODO: add an actual ready object to attempt to delete
     def test_user_does_not_have_permission(self):
         self.assertEqual(models.Ready.objects.count(), 0)
 
