@@ -70,7 +70,51 @@ class RealmRetrieveViewTestCase(APITestCase):
 
 
 class GeneratorViewTestCase(APITestCase):
-    pass
+    def setUp(self):
+        self.user = User.objects.create_user(username='test',
+                                             password='password')
+        self.realm = TestRealm(slug='500years')
+        self.realm.save()
+        self.agent = TestAgent(realm=self.realm, slug='bob')
+        self.agent.save()
+        self.client.login(username='test', password='password')
+
+    def test_realm_type_does_not_exist(self):
+        url = reverse('generator',
+                      kwargs={'realm_alias': 'starsweb',
+                              'realm_pk': 1})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_realm_does_not_exist(self):
+        url = reverse('generator',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk + 1})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_generator_does_not_exist(self):
+        url = reverse('generator',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_success(self):
+        generator = models.Generator(content_object=self.realm)
+        generator.save()
+
+        url = reverse('generator',
+                      kwargs={'realm_alias': 'testrealm',
+                              'realm_pk': self.realm.pk})
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get('content_type'),
+                         "sample_app.testrealm")
 
 
 class GenerationRuleListViewTestCase(APITestCase):

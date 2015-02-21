@@ -82,6 +82,9 @@ class GeneratorMixin(object):
         ct = plugins.realm_type(alias)
         pk = self.kwargs.get('realm_pk')
 
+        if ct is None:
+            raise Http404
+
         try:
             self._realm = ct.get_object_for_this_type(pk=pk)
         except ObjectDoesNotExist:
@@ -187,6 +190,9 @@ class AgentMixin(object):
         alias = self.kwargs.get('agent_alias')
         ct = plugins.agent_type(alias)
         pk = self.kwargs.get('agent_pk')
+
+        if ct is None:
+            raise Http404
 
         plugin = plugins.get_plugin_for_model(ct.model_class())
         qs = plugin.related_agents(realm, ct)
