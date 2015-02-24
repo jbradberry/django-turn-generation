@@ -31,8 +31,8 @@ def timed_generation(self, pk):
     valid = True
 
     now = datetime.datetime.utcnow()
-    delta = (now - generator.last_generation)
-    if delta < generator.minimum_between_generations:
+    last = generator.last_generation
+    if last and last + generator.minimum_between_generations > now:
         logger.info(
             "Insufficient time since last generation on {app}.{model}(pk={pk})"
             ", aborting.".format(

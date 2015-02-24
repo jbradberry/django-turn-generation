@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes import generic
 from django.utils import timezone
 from django.db import models
@@ -18,6 +19,7 @@ class Generator(models.Model):
     generation_time = models.DateTimeField(null=True)
     task_id = models.TextField()
 
+    # TODO: add a settings toggle for force-generations
     autogenerate = models.BooleanField(default=True, blank=True)
     allow_pauses = models.BooleanField(default=True, blank=True)
     minimum_between_generations = models.PositiveIntegerField(
@@ -40,6 +42,22 @@ class Generator(models.Model):
 
         return self.rruleset.after(cutoff)
 
+    @property
+    def last_generation(self):
+        try:
+            return self.timestamps.latest()
+        except ObjectDoesNotExist:
+            return
+
+
+class GenerationTime(models.Model):
+    generator = models.ForeignKey(Generator, related_name='timestamps')
+    timestamp = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        get_latest_by = "timestamp"
+
 
 class GenerationRule(models.Model):
     FREQUENCIES = (
@@ -56,6 +74,9 @@ class GenerationRule(models.Model):
 
     freq = models.PositiveSmallIntegerField(choices=FREQUENCIES,
                                             default=rrule.DAILY, blank=True)
+
+    # TODO: Add a creation/edit datetime, so that recalculation of
+    # next generation can be stable.
     dtstart = models.DateTimeField(blank=True, null=True)
     interval = models.PositiveIntegerField(blank=True, null=True)
     # ignore wkst
