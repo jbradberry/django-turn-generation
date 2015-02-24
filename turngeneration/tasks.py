@@ -59,7 +59,7 @@ def timed_generation(self, pk):
             valid = False
         else:
             # TODO: create model for noting generation times
-            generator.generation_times.create(timestamp=timestamp)
+            generator.timestamps.create()
             generator.readies.clear()
 
     if generator.task_id == self.request.id:
@@ -130,7 +130,7 @@ def ready_generation(self, pk):
         return
 
     # TODO: create model for noting generation times
-    generator.generation_times.create(timestamp=timestamp)
+    generator.timestamps.create()
     generator.readies.clear()
 
     eta = generator.next_generation()
