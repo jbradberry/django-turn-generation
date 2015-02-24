@@ -58,7 +58,6 @@ def timed_generation(self, pk):
             )
             valid = False
         else:
-            # TODO: create model for noting generation times
             generator.timestamps.create()
             generator.readies.clear()
 
@@ -129,7 +128,6 @@ def ready_generation(self, pk):
         Generator.objects.filter(pk=pk).update(generating=False)
         return
 
-    # TODO: create model for noting generation times
     generator.timestamps.create()
     generator.readies.clear()
 
