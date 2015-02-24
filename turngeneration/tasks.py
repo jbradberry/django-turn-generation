@@ -1,5 +1,5 @@
 from django.conf import settings
-from celery import shared_task
+from celery import shared_task, current_app
 from celery.utils.log import get_task_logger
 
 from . import models, plugins
@@ -7,8 +7,8 @@ from . import models, plugins
 logger = get_task_logger(__name__)
 
 
-@shared_task
-def timed_generation(pk):
+@shared_task(bind=True)
+def timed_generation(self, pk):
     generator = Generator.objects.get(pk=pk)
     realm_type = generator.content_type
     realm = generator.content_object
@@ -28,6 +28,8 @@ def timed_generation(pk):
         )
         return
 
+    valid = True
+
     now = datetime.datetime.utcnow()
     delta = (now - generator.last_generation)
     if delta < generator.minimum_between_generations:
@@ -36,43 +38,49 @@ def timed_generation(pk):
             ", aborting.".format(
                 app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
         )
-        Generator.objects.filter(pk=pk).update(generating=False)
-        return
+        valid = False
 
     if generator.allow_pauses and generator.pauses.exists():
         logger.info(
             "Pauses in effect on {app}.{model}(pk={pk}), aborting.".format(
                 app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
         )
-        Generator.objects.filter(pk=pk).update(generating=False)
-        return
+        valid = False
 
-    try:
-        plugin = plugins.get_plugin_for_model(realm)
-        plugin.force_generate(realm)
-    except Exception as e:
-        logger.exception(
-            "Generation failed on {app}.{model}(pk={pk}).".format(
-                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+    if valid:
+        try:
+            plugin = plugins.get_plugin_for_model(realm)
+            plugin.force_generate(realm)
+        except Exception as e:
+            logger.exception(
+                "Generation failed on {app}.{model}(pk={pk}).".format(
+                    app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+            )
+            valid = False
+        else:
+            # TODO: create model for noting generation times
+            generator.generation_times.create(timestamp=timestamp)
+            generator.readies.clear()
+
+    if generator.task_id == self.request.id:
+        eta = generator.next_generation()
+        result = timed_generation.apply_async(pk, eta=eta)
+
+        Generator.objects.filter(pk=pk).update(generating=False,
+                                               task_id=result.id,
+                                               generation_time=eta)
+    else:
+        Generator.objects.filter(pk=pk).update(generating=False)
+
+    if valid:
+        logger.info(
+            "Ending timed generation on {app}.{model}(pk={pk}).".format(
+                app=obj_type.app_label, model=obj_type.model, pk=pk)
         )
-        Generator.objects.filter(pk=pk).update(generating=False)
-        return
-
-    generator.generation_times.create(timestamp=timestamp)
-    eta = generator.next_generation()
-    timed_generation.apply_async(pk, eta=eta)
-
-    generator.readies.clear()
-
-    Generator.objects.filter(pk=pk).update(generating=False)
-    logger.info(
-        "Ending timed generation on {app}.{model}(pk={pk}).".format(
-            app=obj_type.app_label, model=obj_type.model, pk=pk)
-    )
 
 
-@shared_task
-def ready_generation(pk):
+@shared_task(bind=True)
+def ready_generation(self, pk):
     generator = Generator.objects.get(pk=pk)
     realm_type = generator.content_type
     realm = generator.content_object
@@ -121,13 +129,17 @@ def ready_generation(pk):
         Generator.objects.filter(pk=pk).update(generating=False)
         return
 
+    # TODO: create model for noting generation times
     generator.generation_times.create(timestamp=timestamp)
-    eta = generator.next_generation()
-    timed_generation.apply_async(pk, eta=eta)
-
     generator.readies.clear()
 
-    Generator.objects.filter(pk=pk).update(generating=False)
+    eta = generator.next_generation()
+    result = timed_generation.apply_async(pk, eta=eta)
+
+    current_app.control.revoke(generator.task_id)
+    Generator.objects.filter(pk=pk).update(generating=False,
+                                           task_id=result.id,
+                                           generation_time=eta)
     logger.info(
         "Ending auto-generation on {app}.{model}(pk={pk}).".format(
             app=obj_type.app_label, model=obj_type.model, pk=pk)
