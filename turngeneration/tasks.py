@@ -2,6 +2,8 @@ from django.conf import settings
 from celery import shared_task, current_app
 from celery.utils.log import get_task_logger
 
+import datetime
+
 from . import models, plugins
 
 logger = get_task_logger(__name__)
@@ -9,7 +11,7 @@ logger = get_task_logger(__name__)
 
 @shared_task(bind=True)
 def timed_generation(self, pk):
-    generator = Generator.objects.get(pk=pk)
+    generator = models.Generator.objects.get(pk=pk)
     realm_type = generator.content_type
     realm = generator.content_object
 
@@ -19,7 +21,7 @@ def timed_generation(self, pk):
     )
 
     # Lock against another task generating on the same Generator.
-    if not Generator.objects.filter(
+    if not models.Generator.objects.filter(
             pk=pk, generating=False).update(generating=True):
         logger.warning(
             "Generation already in progress on {app}.{model}(pk={pk}),"
@@ -52,6 +54,7 @@ def timed_generation(self, pk):
             plugin = plugins.get_plugin_for_model(realm)
             plugin.force_generate(realm)
         except Exception as e:
+            print "Exception!"
             logger.exception(
                 "Generation failed on {app}.{model}(pk={pk}).".format(
                     app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
@@ -59,28 +62,25 @@ def timed_generation(self, pk):
             valid = False
         else:
             generator.timestamps.create()
-            generator.readies.clear()
+            generator.readies.all().delete()
 
-    if generator.task_id == self.request.id:
-        eta = generator.next_generation()
-        result = timed_generation.apply_async(pk, eta=eta)
+    eta = generator.next_time()
+    result = timed_generation.apply_async((pk,), eta=eta)
 
-        Generator.objects.filter(pk=pk).update(generating=False,
-                                               task_id=result.id,
-                                               generation_time=eta)
-    else:
-        Generator.objects.filter(pk=pk).update(generating=False)
+    models.Generator.objects.filter(pk=pk).update(generating=False,
+                                                  task_id=result.id,
+                                                  generation_time=eta)
 
     if valid:
         logger.info(
             "Ending timed generation on {app}.{model}(pk={pk}).".format(
-                app=obj_type.app_label, model=obj_type.model, pk=pk)
+                app=realm_type.app_label, model=realm_type.model, pk=pk)
         )
 
 
 @shared_task(bind=True)
 def ready_generation(self, pk):
-    generator = Generator.objects.get(pk=pk)
+    generator = models.Generator.objects.get(pk=pk)
     realm_type = generator.content_type
     realm = generator.content_object
 
@@ -90,7 +90,7 @@ def ready_generation(self, pk):
     )
 
     # Lock against another task generating on the same Generator.
-    if not Generator.objects.filter(
+    if not models.Generator.objects.filter(
             pk=pk, generating=False).update(generating=True):
         logger.warning(
             "Generation already in progress on {app}.{model}(pk={pk}),"
@@ -105,40 +105,40 @@ def ready_generation(self, pk):
             " aborting.".format(
                 app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
         )
-        Generator.objects.filter(pk=pk).update(generating=False)
+        models.Generator.objects.filter(pk=pk).update(generating=False)
         return
 
+    plugin = plugins.get_plugin_for_model(realm)
     if not plugin.is_ready(generator):
         logger.info(
             "Not ready for auto-generation on {app}.{model}(pk={pk}),"
             " aborting.".format(
                 app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
         )
-        Generator.objects.filter(pk=pk).update(generating=False)
+        models.Generator.objects.filter(pk=pk).update(generating=False)
         return
 
     try:
-        plugin = plugins.get_plugin_for_model(realm)
         plugin.auto_generate(realm)
     except Exception as e:
         logger.exception(
             "Generation failed on {app}.{model}(pk={pk}).".format(
                 app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
         )
-        Generator.objects.filter(pk=pk).update(generating=False)
+        models.Generator.objects.filter(pk=pk).update(generating=False)
         return
 
     generator.timestamps.create()
-    generator.readies.clear()
+    generator.readies.all().delete()
 
-    eta = generator.next_generation()
-    result = timed_generation.apply_async(pk, eta=eta)
+    eta = generator.next_time()
+    result = timed_generation.apply_async((pk,), eta=eta)
 
     current_app.control.revoke(generator.task_id)
-    Generator.objects.filter(pk=pk).update(generating=False,
-                                           task_id=result.id,
-                                           generation_time=eta)
+    models.Generator.objects.filter(pk=pk).update(generating=False,
+                                                  task_id=result.id,
+                                                  generation_time=eta)
     logger.info(
         "Ending auto-generation on {app}.{model}(pk={pk}).".format(
-            app=obj_type.app_label, model=obj_type.model, pk=pk)
+            app=realm_type.app_label, model=realm_type.model, pk=pk)
     )

@@ -40,6 +40,9 @@ class TurnGeneration(object):
     def _is_player(self, user, obj):
         return obj.user == user
 
+    def is_ready(self, generator):
+        return True
+
     def auto_generate(self, realm):
         realm.generate()
 

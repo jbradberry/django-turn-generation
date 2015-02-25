@@ -7,6 +7,9 @@ class TestRealm(models.Model):
     def get_absolute_url(self):
         return ''
 
+    def generate(self):
+        pass
+
 
 class TestAgent(models.Model):
     realm = models.ForeignKey(TestRealm, related_name='agents', null=True)
