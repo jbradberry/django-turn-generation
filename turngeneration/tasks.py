@@ -11,9 +11,13 @@ logger = get_task_logger(__name__)
 
 @shared_task(bind=True)
 def timed_generation(self, pk):
-    generator = models.Generator.objects.get(pk=pk)
-    realm_type = generator.content_type
-    realm = generator.content_object
+    try:
+        generator = models.Generator.objects.get(pk=pk)
+        realm_type = generator.content_type
+        realm = generator.content_object
+    except Exception as e:
+        logger.exception("Failed timed_generation(pk={pk}).".format(pk=pk))
+        return
 
     logger.info(
         "Beginning timed generation on {app}.{model}(pk={pk}).".format(
@@ -42,19 +46,23 @@ def timed_generation(self, pk):
         )
         valid = False
 
+    # If the generator is paused, don't bother creating a new timed task.
+    # It'll get picked back up when the pause is cancelled.
     if generator.allow_pauses and generator.pauses.exists():
         logger.info(
             "Pauses in effect on {app}.{model}(pk={pk}), aborting.".format(
                 app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
         )
-        valid = False
+        models.Generator.objects.filter(pk=pk).update(generating=False,
+                                                      task_id='',
+                                                      generation_time=None)
+        return
 
     if valid:
         try:
             plugin = plugins.get_plugin_for_model(realm)
             plugin.force_generate(realm)
         except Exception as e:
-            print "Exception!"
             logger.exception(
                 "Generation failed on {app}.{model}(pk={pk}).".format(
                     app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
@@ -80,9 +88,13 @@ def timed_generation(self, pk):
 
 @shared_task(bind=True)
 def ready_generation(self, pk):
-    generator = models.Generator.objects.get(pk=pk)
-    realm_type = generator.content_type
-    realm = generator.content_object
+    try:
+        generator = models.Generator.objects.get(pk=pk)
+        realm_type = generator.content_type
+        realm = generator.content_object
+    except Exception as e:
+        logger.exception("Failed timed_generation(pk={pk}).".format(pk=pk))
+        return
 
     logger.info(
         "Beginning auto-generation on {app}.{model}(pk={pk}).".format(
@@ -108,17 +120,18 @@ def ready_generation(self, pk):
         models.Generator.objects.filter(pk=pk).update(generating=False)
         return
 
-    plugin = plugins.get_plugin_for_model(realm)
-    if not plugin.is_ready(generator):
-        logger.info(
-            "Not ready for auto-generation on {app}.{model}(pk={pk}),"
-            " aborting.".format(
-                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
-        )
-        models.Generator.objects.filter(pk=pk).update(generating=False)
-        return
-
     try:
+        plugin = plugins.get_plugin_for_model(realm)
+
+        if not plugin.is_ready(generator):
+            logger.info(
+                "Not ready for auto-generation on {app}.{model}(pk={pk}),"
+                " aborting.".format(
+                    app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+            )
+            models.Generator.objects.filter(pk=pk).update(generating=False)
+            return
+
         plugin.auto_generate(realm)
     except Exception as e:
         logger.exception(
