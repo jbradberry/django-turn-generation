@@ -32,8 +32,8 @@ class GeneratorSerializer(serializers.ModelSerializer):
 
     class Meta(object):
         model = models.Generator
-        fields = ('content_type', 'object_id',
-                  'generating', 'generation_time', 'autogenerate',
+        fields = ('content_type', 'object_id', 'generating',
+                  'generation_time', 'force_generate', 'autogenerate',
                   'allow_pauses', 'minimum_between_generations')
         read_only_fields = ('generating', 'generation_time')
 

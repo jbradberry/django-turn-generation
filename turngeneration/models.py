@@ -19,7 +19,7 @@ class Generator(models.Model):
     generation_time = models.DateTimeField(null=True)
     task_id = models.TextField()
 
-    # TODO: add a settings toggle for force-generations
+    force_generate = models.BooleanField(default=True, blank=True)
     autogenerate = models.BooleanField(default=True, blank=True)
     allow_pauses = models.BooleanField(default=True, blank=True)
     minimum_between_generations = models.PositiveIntegerField(
@@ -75,8 +75,8 @@ class GenerationRule(models.Model):
     freq = models.PositiveSmallIntegerField(choices=FREQUENCIES,
                                             default=rrule.DAILY, blank=True)
 
-    # TODO: Add a creation/edit datetime, so that recalculation of
-    # next generation can be stable.
+    # NOTE: The resultant next_time will depend on the datetime that
+    # it is called if the user does not fill out the dtstart field.
     dtstart = models.DateTimeField(blank=True, null=True)
     interval = models.PositiveIntegerField(blank=True, null=True)
     # ignore wkst
