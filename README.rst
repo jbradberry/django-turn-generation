@@ -11,5 +11,6 @@ Requirements
 - Python >= 2.6
 - Django >= 1.4
 - Celery >= 3.1
+- `djangorestframework <http://www.django-rest-framework.org/>`_ >= 3.1
 - python-dateutil
 - pytz
