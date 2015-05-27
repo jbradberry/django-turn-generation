@@ -12,7 +12,7 @@ from sample_project.sample_app.models import TestRealm
 class GenerationRuleTestCase(TestCase):
     def setUp(self):
         self.realm = TestRealm.objects.create()
-        self.gentime = Generator(content_object=self.realm)
+        self.gentime = Generator(realm=self.realm)
         self.gentime.save()
 
         self.now = datetime.datetime(2014, 11, 30, 10)

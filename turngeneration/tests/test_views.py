@@ -122,7 +122,7 @@ class GeneratorViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_user_does_not_have_permission(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         url = reverse('generator',
@@ -219,7 +219,7 @@ class GenerationRuleListViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_user_does_not_have_permission(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         url = reverse('generation_rules_list',
@@ -236,7 +236,7 @@ class GenerationRuleListViewTestCase(APITestCase):
         self.assertEqual(models.GenerationRule.objects.count(), 0)
 
     def test_success(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
         self.user.is_staff = True
         self.user.save()
@@ -268,7 +268,7 @@ class GenerationRuleViewTestCase(APITestCase):
         self.agent = TestAgent(realm=self.realm, slug='bob')
         self.agent.save()
         self.client.login(username='test', password='password')
-        self.generator = models.Generator(content_object=self.realm)
+        self.generator = models.Generator(realm=self.realm)
         self.generator.save()
         self.rule = models.GenerationRule(generator=self.generator)
         self.rule.save()
@@ -423,7 +423,7 @@ class AgentListViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_success(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         realm_url = reverse('agent_list',
@@ -477,7 +477,7 @@ class AgentRetrieveViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_agent_type_does_not_exist(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         realm_url = reverse('agent_detail',
@@ -490,7 +490,7 @@ class AgentRetrieveViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_agent_does_not_exist(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         realm_url = reverse('agent_detail',
@@ -503,7 +503,7 @@ class AgentRetrieveViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_unpaused_unready(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         realm_url = reverse('agent_detail',
@@ -519,7 +519,7 @@ class AgentRetrieveViewTestCase(APITestCase):
         self.assertIsNone(response.data.get('ready'))
 
     def test_unpaused_ready(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         ready = models.Ready(agent=self.agent, generator=generator,
@@ -539,7 +539,7 @@ class AgentRetrieveViewTestCase(APITestCase):
         self.assertIsNotNone(response.data.get('ready'))
 
     def test_paused_unready(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         pause = models.Pause(agent=self.agent, generator=generator,
@@ -559,7 +559,7 @@ class AgentRetrieveViewTestCase(APITestCase):
         self.assertIsNone(response.data.get('ready'))
 
     def test_paused_ready(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         pause = models.Pause(agent=self.agent, generator=generator,
@@ -655,7 +655,7 @@ class PauseViewTestCase(APITestCase):
     def test_agent_type_does_not_exist(self):
         self.assertEqual(models.Pause.objects.count(), 0)
 
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         realm_url = reverse('pause',
@@ -681,7 +681,7 @@ class PauseViewTestCase(APITestCase):
     def test_agent_does_not_exist(self):
         self.assertEqual(models.Pause.objects.count(), 0)
 
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         realm_url = reverse('pause',
@@ -707,7 +707,7 @@ class PauseViewTestCase(APITestCase):
     def test_user_does_not_have_permission(self):
         self.assertEqual(models.Pause.objects.count(), 0)
 
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         realm_url = reverse('pause',
@@ -733,7 +733,7 @@ class PauseViewTestCase(APITestCase):
     def test_pauses_not_allowed(self):
         self.assertEqual(models.Pause.objects.count(), 0)
 
-        generator = models.Generator(content_object=self.realm,
+        generator = models.Generator(realm=self.realm,
                                      allow_pauses=False)
         generator.save()
         self.agent.user = self.user
@@ -759,7 +759,7 @@ class PauseViewTestCase(APITestCase):
     def test_success(self):
         self.assertEqual(models.Pause.objects.count(), 0)
 
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
         self.agent.user = self.user
         self.agent.save()
@@ -782,7 +782,7 @@ class PauseViewTestCase(APITestCase):
         self.assertEqual(models.Pause.objects.count(), 1)
 
     def test_already_paused(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
         self.agent.user = self.user
         self.agent.save()
@@ -813,7 +813,7 @@ class PauseViewTestCase(APITestCase):
         self.assertEqual(models.Pause.objects.count(), 1)
 
     def test_pauses_not_allowed_can_still_unpause(self):
-        generator = models.Generator(content_object=self.realm,
+        generator = models.Generator(realm=self.realm,
                                      allow_pauses=False)
         generator.save()
         self.agent.user = self.user
@@ -838,7 +838,7 @@ class PauseViewTestCase(APITestCase):
         self.assertEqual(models.Pause.objects.count(), 0)
 
     def test_already_unpaused(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
         self.agent.user = self.user
         self.agent.save()
@@ -860,7 +860,7 @@ class PauseViewTestCase(APITestCase):
         self.assertEqual(models.Pause.objects.count(), 0)
 
     def test_can_pause_while_ready(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
         self.agent.user = self.user
         self.agent.save()
@@ -958,7 +958,7 @@ class ReadyViewTestCase(APITestCase):
     def test_agent_type_does_not_exist(self):
         self.assertEqual(models.Ready.objects.count(), 0)
 
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         realm_url = reverse('ready',
@@ -981,7 +981,7 @@ class ReadyViewTestCase(APITestCase):
     def test_agent_does_not_exist(self):
         self.assertEqual(models.Ready.objects.count(), 0)
 
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         realm_url = reverse('ready',
@@ -1002,7 +1002,7 @@ class ReadyViewTestCase(APITestCase):
         self.assertEqual(models.Ready.objects.count(), 0)
 
     def test_user_does_not_have_permission(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
 
         self.assertEqual(models.Ready.objects.count(), 0)
@@ -1035,7 +1035,7 @@ class ReadyViewTestCase(APITestCase):
     def test_success(self):
         self.assertEqual(models.Ready.objects.count(), 0)
 
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
         self.agent.user = self.user
         self.agent.save()
@@ -1055,7 +1055,7 @@ class ReadyViewTestCase(APITestCase):
         self.assertEqual(models.Ready.objects.count(), 1)
 
     def test_already_ready(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
         self.agent.user = self.user
         self.agent.save()
@@ -1083,7 +1083,7 @@ class ReadyViewTestCase(APITestCase):
         self.assertEqual(models.Ready.objects.count(), 1)
 
     def test_can_mark_ready_while_paused(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
         self.agent.user = self.user
         self.agent.save()
@@ -1110,7 +1110,7 @@ class ReadyViewTestCase(APITestCase):
         self.assertEqual(models.Pause.objects.count(), 1)
 
     def test_already_unready(self):
-        generator = models.Generator(content_object=self.realm)
+        generator = models.Generator(realm=self.realm)
         generator.save()
         self.agent.user = self.user
         self.agent.save()

@@ -12,7 +12,7 @@ import pytz
 class Generator(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
     object_id = models.PositiveIntegerField()
-    content_object = generic.GenericForeignKey()
+    realm = generic.GenericForeignKey()
 
     generating = models.BooleanField(default=False, blank=True)
 

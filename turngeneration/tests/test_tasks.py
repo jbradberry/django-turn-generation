@@ -12,7 +12,7 @@ class TimedGenerationTestCase(TestCase):
         self.ready_generation = tasks.ready_generation
 
         self.realm = TestRealm.objects.create()
-        self.gentime = Generator(content_object=self.realm)
+        self.gentime = Generator(realm=self.realm)
         self.gentime.save()
 
     def test_simple(self):
@@ -33,7 +33,7 @@ class ReadyGenerationTestCase(TestCase):
         self.ready_generation = tasks.ready_generation
 
         self.realm = TestRealm.objects.create()
-        self.gentime = Generator(content_object=self.realm)
+        self.gentime = Generator(realm=self.realm)
         self.gentime.save()
 
     def test_simple(self):
@@ -54,5 +54,5 @@ class IntegrationTestCase(TestCase):
         self.ready_generation = tasks.ready_generation
 
         self.realm = TestRealm.objects.create()
-        self.gentime = Generator(content_object=self.realm)
+        self.gentime = Generator(realm=self.realm)
         self.gentime.save()

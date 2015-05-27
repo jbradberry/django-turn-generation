@@ -17,10 +17,10 @@ def timed_generation(self, pk):
     try:
         generator = models.Generator.objects.get(pk=pk)
         realm_type = generator.content_type
-        realm = generator.content_object
+        realm = generator.realm
     except Exception as e:
         logger.exception("Failed timed_generation(pk={pk}).".format(pk=pk))
-        return
+        raise
 
     logger.info(
         "Beginning timed generation on {app}.{model}(pk={pk}).".format(
@@ -113,10 +113,10 @@ def ready_generation(self, pk):
     try:
         generator = models.Generator.objects.get(pk=pk)
         realm_type = generator.content_type
-        realm = generator.content_object
+        realm = generator.realm
     except Exception as e:
         logger.exception("Failed timed_generation(pk={pk}).".format(pk=pk))
-        return
+        raise
 
     logger.info(
         "Beginning auto-generation on {app}.{model}(pk={pk}).".format(

@@ -104,7 +104,7 @@ class GeneratorView(GeneratorMixin, CrudAPIView):
 
     def create(self, request, *args, **kwargs):
         realm = self.get_realm()
-        instance = models.Generator(content_object=realm)
+        instance = models.Generator(realm=realm)
 
         serializer = self.get_serializer(instance=instance, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -174,7 +174,7 @@ class AgentQuerysetMixin(object):
         if agent_type is None or plugin is None:
             raise Http404
 
-        queryset = plugin.related_agents(generator.content_object, agent_type)
+        queryset = plugin.related_agents(generator.realm, agent_type)
         if queryset is None:
             raise Http404
         return queryset
