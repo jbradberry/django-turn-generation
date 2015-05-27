@@ -165,7 +165,7 @@ class GeneratorViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data.get('allow_pauses'), True)
 
-        response = self.client.put(url, {}, follow=True)
+        response = self.client.put(url, {'allow_pauses': False}, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data.get('allow_pauses'), False)
 
