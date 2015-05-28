@@ -28,6 +28,26 @@ class Generator(models.Model):
     class Meta:
         unique_together = ('content_type', 'object_id')
 
+    def save(self, *args, **kwargs):
+        from . import tasks, plugins
+
+        if not self.force_generate and self.task_id:
+            celery.control.revoke(self.task_id)
+            self.task_id = ''
+            self.generation_time = None
+        elif self.force_generate and not self.task_id:
+            eta = self.next_time()
+            task_id = tasks.timed_generation.apply_async(
+                (self.pk,), eta=eta).id
+            self.task_id = task_id
+            self.generation_time = eta
+        elif self.autogenerate:
+            plugin = plugins.get_plugin_for_model(self.realm)
+            if plugin.is_ready(self):
+                tasks.ready_generation.apply_async((self.pk,))
+
+        super(Generator, self).save(*args, **kwargs)
+
     @property
     def rruleset(self):
         rset = rrule.rruleset()
@@ -127,6 +147,23 @@ class Pause(models.Model):
     class Meta:
         unique_together = ('content_type', 'object_id', 'generator')
 
+    def delete(self, *args, **kwargs):
+        from . import tasks
+
+        super(Pause, self).delete(*args, **kwargs)
+
+        generator = self.generator
+
+        if generator.force_generate:
+            if not generator.pauses.exists() and not generator.task_id:
+                eta = generator.next_time()
+                if eta is not None:
+                    task_id = tasks.timed_generation.apply_async(
+                        (generator.pk,), eta=eta).id
+                    generator.eta = eta
+                    generator.task_id = task_id
+                    generator.save()
+
 
 class Ready(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
@@ -139,3 +176,13 @@ class Ready(models.Model):
 
     class Meta:
         unique_together = ('content_type', 'object_id', 'generator')
+
+    def save(self, *args, **kwargs):
+        from . import tasks, plugins
+
+        super(Ready, self).save(*args, **kwargs)
+
+        if self.generator.autogenerate:
+            plugin = plugins.get_plugin_for_model(self.generator.realm)
+            if plugin.is_ready(self.generator):
+                tasks.ready_generation.apply_async((self.generator.pk,))
