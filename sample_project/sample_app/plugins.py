@@ -1,3 +1,5 @@
+from django.contrib.contenttypes.models import ContentType
+
 from . import models
 
 
@@ -25,7 +27,12 @@ class TurnGeneration(object):
         'turngeneration.delete_ready': '_is_player',
     }
 
-    def related_agents(self, realm, agent_type):
+    def related_agents(self, realm, agent_type=None):
+        ct = ContentType.objects.get_for_model(models.TestAgent)
+        if agent_type is None:
+            agent_type = ct
+        if agent_type != ct:
+            return
         return realm.agents.all()
 
     def _is_host(self, user, obj):
@@ -33,9 +40,6 @@ class TurnGeneration(object):
 
     def _is_player(self, user, obj):
         return obj.user == user
-
-    def is_ready(self, generator):
-        return True
 
     def auto_generate(self, realm):
         realm.generate()

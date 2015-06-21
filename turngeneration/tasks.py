@@ -4,7 +4,6 @@ from celery.utils.log import get_task_logger
 
 import datetime
 
-from . import models, plugins
 
 logger = get_task_logger(__name__)
 
@@ -14,6 +13,8 @@ logger = get_task_logger(__name__)
 
 @shared_task(bind=True)
 def timed_generation(self, pk):
+    from . import models, plugins
+
     try:
         generator = models.Generator.objects.get(pk=pk)
         realm_type = generator.content_type
@@ -47,7 +48,7 @@ def timed_generation(self, pk):
         )
         # No need to fire off a new task, since force-generations will
         # be disabled until the boolean is cleared, and then the
-        # signal handler will deal with it.
+        # overriden save method will handle it.
         models.Generator.objects.filter(pk=pk).update(generating=False,
                                                       task_id='',
                                                       generation_time=None)
@@ -110,6 +111,8 @@ def timed_generation(self, pk):
 
 @shared_task(bind=True)
 def ready_generation(self, pk):
+    from . import models, plugins
+
     try:
         generator = models.Generator.objects.get(pk=pk)
         realm_type = generator.content_type
@@ -145,9 +148,7 @@ def ready_generation(self, pk):
         return
 
     try:
-        plugin = plugins.get_plugin_for_model(realm)
-
-        if not plugin.is_ready(generator):
+        if not generator.is_ready():
             logger.info(
                 "Not ready for auto-generation on {app}.{model}(pk={pk}),"
                 " aborting.".format(
@@ -156,6 +157,7 @@ def ready_generation(self, pk):
             models.Generator.objects.filter(pk=pk).update(generating=False)
             return
 
+        plugin = plugins.get_plugin_for_model(realm)
         plugin.auto_generate(realm)
     except Exception as e:
         # TODO: consider doing a transaction rollback here

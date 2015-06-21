@@ -7,6 +7,11 @@ from celery import current_app as celery
 from dateutil import rrule
 import datetime
 import pytz
+import logging
+
+from . import tasks
+
+logger = logging.getLogger(__name__)
 
 
 class Generator(models.Model):
@@ -28,6 +33,19 @@ class Generator(models.Model):
     class Meta:
         unique_together = ('content_type', 'object_id')
 
+    def is_ready(self):
+        from . import plugins
+        plugin = plugins.get_plugin_for_model(self.realm)
+
+        readies = set(ready.agent for ready in self.readies.all())
+        if not readies:
+            return False
+        agents = plugin.related_agents(self.realm)
+        if not agents:
+            return False
+
+        return all(agent in readies for agent in agents)
+
     def save(self, *args, **kwargs):
         from . import tasks, plugins
 
@@ -41,10 +59,8 @@ class Generator(models.Model):
                 (self.pk,), eta=eta).id
             self.task_id = task_id
             self.generation_time = eta
-        elif self.autogenerate:
-            plugin = plugins.get_plugin_for_model(self.realm)
-            if plugin.is_ready(self):
-                tasks.ready_generation.apply_async((self.pk,))
+        elif self.autogenerate and self.is_ready():
+            tasks.ready_generation.apply_async((self.pk,))
 
         super(Generator, self).save(*args, **kwargs)
 
@@ -79,6 +95,8 @@ class GenerationTime(models.Model):
         get_latest_by = "timestamp"
 
 
+# FIXME: when a new one is saved and the generator doesn't already
+# have a task queued, check to see if we should queue one.
 class GenerationRule(models.Model):
     FREQUENCIES = (
         (rrule.YEARLY, 'Yearly'),
@@ -148,14 +166,12 @@ class Pause(models.Model):
         unique_together = ('content_type', 'object_id', 'generator')
 
     def delete(self, *args, **kwargs):
-        from . import tasks
-
         super(Pause, self).delete(*args, **kwargs)
 
         generator = self.generator
 
         if generator.force_generate:
-            if not generator.pauses.exists() and not generator.task_id:
+            if not generator.task_id and not generator.pauses.exists():
                 eta = generator.next_time()
                 if eta is not None:
                     task_id = tasks.timed_generation.apply_async(
@@ -178,11 +194,9 @@ class Ready(models.Model):
         unique_together = ('content_type', 'object_id', 'generator')
 
     def save(self, *args, **kwargs):
-        from . import tasks, plugins
-
         super(Ready, self).save(*args, **kwargs)
 
-        if self.generator.autogenerate:
-            plugin = plugins.get_plugin_for_model(self.generator.realm)
-            if plugin.is_ready(self.generator):
-                tasks.ready_generation.apply_async((self.generator.pk,))
+        if self.generator.autogenerate and self.generator.is_ready():
+            logger.debug(
+                "Triggering autogeneration for: {0}".format(self.generator.pk))
+            result = tasks.ready_generation.apply_async((self.generator.pk,))
