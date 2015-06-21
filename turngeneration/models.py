@@ -47,20 +47,18 @@ class Generator(models.Model):
         return all(agent in readies for agent in agents)
 
     def save(self, *args, **kwargs):
-        from . import tasks, plugins
-
-        if not self.force_generate and self.task_id:
-            celery.control.revoke(self.task_id)
-            self.task_id = ''
-            self.generation_time = None
-        elif self.force_generate and not self.task_id:
-            eta = self.next_time()
-            task_id = tasks.timed_generation.apply_async(
-                (self.pk,), eta=eta).id
-            self.task_id = task_id
-            self.generation_time = eta
-        elif self.autogenerate and self.is_ready():
+        if self.autogenerate and self.is_ready():
             tasks.ready_generation.apply_async((self.pk,))
+        elif (self.force_generate and not self.task_id
+            and not self.pauses.exists()):
+            eta = self.next_time()
+            if eta is not None:
+                task_id = tasks.timed_generation.apply_async(
+                    (self.pk,), eta=eta).id
+                self.task_id, self.generation_time = task_id, eta
+        elif not self.force_generate and self.task_id:
+            celery.control.revoke(self.task_id)
+            self.task_id, self.generation_time = '', None
 
         super(Generator, self).save(*args, **kwargs)
 

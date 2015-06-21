@@ -76,10 +76,17 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'djcelery',
+    'kombu.transport.django',
     'rest_framework',
     'turngeneration',
     'sample_project.sample_app',
 )
+
+import djcelery
+djcelery.setup_loader()
+BROKER_URL = 'django://'
+CELERY_ALWAYS_EAGER = True
 
 SENDFILE_BACKEND = 'sendfile.backends.development'
 

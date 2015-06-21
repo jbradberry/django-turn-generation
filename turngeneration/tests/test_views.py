@@ -1,6 +1,7 @@
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
+from mock import patch, call
 
 from .. import models
 from sample_project.sample_app.models import TestRealm, TestAgent
@@ -442,8 +443,8 @@ class AgentRetrieveViewTestCase(APITestCase):
                                              password='password')
         self.realm = TestRealm(slug='500years')
         self.realm.save()
-        self.agent = TestAgent(realm=self.realm, slug='bob')
-        self.agent.save()
+        self.agent1 = self.realm.agents.create(slug='agent1')
+        self.agent2 = self.realm.agents.create(slug='agent2')
         self.client.login(username='test', password='password')
 
     def test_realm_type_does_not_exist(self):
@@ -451,7 +452,7 @@ class AgentRetrieveViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'starsgame',
                                     'realm_pk': 1,
                                     'agent_alias': 'testagent',
-                                    'pk': self.agent.pk})
+                                    'pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -461,7 +462,7 @@ class AgentRetrieveViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk + 1,
                                     'agent_alias': 'testagent',
-                                    'pk': self.agent.pk})
+                                    'pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -471,7 +472,7 @@ class AgentRetrieveViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'pk': self.agent.pk})
+                                    'pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -497,7 +498,7 @@ class AgentRetrieveViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'pk': self.agent.pk + 1})
+                                    'pk': self.agent2.pk + 1})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -510,7 +511,7 @@ class AgentRetrieveViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'pk': self.agent.pk})
+                                    'pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 200)
@@ -522,7 +523,7 @@ class AgentRetrieveViewTestCase(APITestCase):
         generator = models.Generator(realm=self.realm)
         generator.save()
 
-        ready = models.Ready(agent=self.agent, generator=generator,
+        ready = models.Ready(agent=self.agent1, generator=generator,
                              user=self.user)
         ready.save()
 
@@ -530,7 +531,7 @@ class AgentRetrieveViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'pk': self.agent.pk})
+                                    'pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 200)
@@ -542,7 +543,7 @@ class AgentRetrieveViewTestCase(APITestCase):
         generator = models.Generator(realm=self.realm)
         generator.save()
 
-        pause = models.Pause(agent=self.agent, generator=generator,
+        pause = models.Pause(agent=self.agent1, generator=generator,
                              user=self.user)
         pause.save()
 
@@ -550,7 +551,7 @@ class AgentRetrieveViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'pk': self.agent.pk})
+                                    'pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 200)
@@ -562,10 +563,10 @@ class AgentRetrieveViewTestCase(APITestCase):
         generator = models.Generator(realm=self.realm)
         generator.save()
 
-        pause = models.Pause(agent=self.agent, generator=generator,
+        pause = models.Pause(agent=self.agent1, generator=generator,
                              user=self.user)
         pause.save()
-        ready = models.Ready(agent=self.agent, generator=generator,
+        ready = models.Ready(agent=self.agent1, generator=generator,
                              user=self.user)
         ready.save()
 
@@ -573,7 +574,7 @@ class AgentRetrieveViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'pk': self.agent.pk})
+                                    'pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 200)
@@ -588,8 +589,8 @@ class PauseViewTestCase(APITestCase):
                                              password='password')
         self.realm = TestRealm(slug='500years')
         self.realm.save()
-        self.agent = TestAgent(realm=self.realm, slug='bob')
-        self.agent.save()
+        self.agent1 = self.realm.agents.create(slug='agent1')
+        self.agent2 = self.realm.agents.create(slug='agent2')
         self.client.login(username='test', password='password')
 
     def test_realm_type_does_not_exist(self):
@@ -599,7 +600,7 @@ class PauseViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'starsgame',
                                     'realm_pk': 1,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -619,7 +620,7 @@ class PauseViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk + 1,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -639,7 +640,7 @@ class PauseViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -688,7 +689,7 @@ class PauseViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk + 1})
+                                    'agent_pk': self.agent2.pk + 1})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -714,7 +715,7 @@ class PauseViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -736,14 +737,14 @@ class PauseViewTestCase(APITestCase):
         generator = models.Generator(realm=self.realm,
                                      allow_pauses=False)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
         realm_url = reverse('pause',
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -761,14 +762,14 @@ class PauseViewTestCase(APITestCase):
 
         generator = models.Generator(realm=self.realm)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
         realm_url = reverse('pause',
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -784,10 +785,10 @@ class PauseViewTestCase(APITestCase):
     def test_already_paused(self):
         generator = models.Generator(realm=self.realm)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
-        pause = models.Pause(agent=self.agent, generator=generator)
+        pause = models.Pause(agent=self.agent1, generator=generator)
         pause.save()
         self.assertEqual(models.Pause.objects.count(), 1)
 
@@ -795,7 +796,7 @@ class PauseViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 200)
@@ -816,10 +817,10 @@ class PauseViewTestCase(APITestCase):
         generator = models.Generator(realm=self.realm,
                                      allow_pauses=False)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
-        pause = models.Pause(agent=self.agent, generator=generator)
+        pause = models.Pause(agent=self.agent1, generator=generator)
         pause.save()
         self.assertEqual(models.Pause.objects.count(), 1)
 
@@ -827,7 +828,7 @@ class PauseViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 200)
@@ -840,8 +841,8 @@ class PauseViewTestCase(APITestCase):
     def test_already_unpaused(self):
         generator = models.Generator(realm=self.realm)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
         self.assertEqual(models.Pause.objects.count(), 0)
 
@@ -849,7 +850,7 @@ class PauseViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -862,10 +863,10 @@ class PauseViewTestCase(APITestCase):
     def test_can_pause_while_ready(self):
         generator = models.Generator(realm=self.realm)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
-        ready = models.Ready(agent=self.agent, generator=generator)
+        ready = models.Ready(agent=self.agent1, generator=generator)
         ready.save()
         self.assertEqual(models.Ready.objects.count(), 1)
 
@@ -873,7 +874,7 @@ class PauseViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.post(realm_url,
             {'reason': 'laziness'},
@@ -891,8 +892,8 @@ class ReadyViewTestCase(APITestCase):
                                              password='password')
         self.realm = TestRealm(slug='500years')
         self.realm.save()
-        self.agent = TestAgent(realm=self.realm, slug='bob')
-        self.agent.save()
+        self.agent1 = self.realm.agents.create(slug='agent1')
+        self.agent2 = self.realm.agents.create(slug='agent2')
         self.client.login(username='test', password='password')
 
     def test_realm_type_does_not_exist(self):
@@ -902,7 +903,7 @@ class ReadyViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'starsgame',
                                     'realm_pk': 1,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -922,7 +923,7 @@ class ReadyViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk + 1,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -942,7 +943,7 @@ class ReadyViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -988,7 +989,7 @@ class ReadyViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk + 1})
+                                    'agent_pk': self.agent2.pk + 1})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -1011,7 +1012,7 @@ class ReadyViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -1021,7 +1022,7 @@ class ReadyViewTestCase(APITestCase):
 
         self.assertEqual(models.Ready.objects.count(), 0)
 
-        ready = models.Ready(agent=self.agent, generator=generator)
+        ready = models.Ready(agent=self.agent1, generator=generator)
         ready.save()
 
         response = self.client.get(realm_url)
@@ -1037,14 +1038,14 @@ class ReadyViewTestCase(APITestCase):
 
         generator = models.Generator(realm=self.realm)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
         realm_url = reverse('ready',
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -1057,10 +1058,10 @@ class ReadyViewTestCase(APITestCase):
     def test_already_ready(self):
         generator = models.Generator(realm=self.realm)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
-        ready = models.Ready(agent=self.agent, generator=generator)
+        ready = models.Ready(agent=self.agent1, generator=generator)
         ready.save()
         self.assertEqual(models.Ready.objects.count(), 1)
 
@@ -1068,7 +1069,7 @@ class ReadyViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 200)
@@ -1085,10 +1086,10 @@ class ReadyViewTestCase(APITestCase):
     def test_can_mark_ready_while_paused(self):
         generator = models.Generator(realm=self.realm)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
-        pause = models.Pause(agent=self.agent, generator=generator,
+        pause = models.Pause(agent=self.agent1, generator=generator,
                              reason='laziness')
         pause.save()
         self.assertEqual(models.Ready.objects.count(), 0)
@@ -1098,7 +1099,7 @@ class ReadyViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
@@ -1112,8 +1113,8 @@ class ReadyViewTestCase(APITestCase):
     def test_already_unready(self):
         generator = models.Generator(realm=self.realm)
         generator.save()
-        self.agent.user = self.user
-        self.agent.save()
+        self.agent1.user = self.user
+        self.agent1.save()
 
         self.assertEqual(models.Ready.objects.count(), 0)
 
@@ -1121,7 +1122,7 @@ class ReadyViewTestCase(APITestCase):
                             kwargs={'realm_alias': 'testrealm',
                                     'realm_pk': self.realm.pk,
                                     'agent_alias': 'testagent',
-                                    'agent_pk': self.agent.pk})
+                                    'agent_pk': self.agent1.pk})
 
         response = self.client.get(realm_url)
         self.assertEqual(response.status_code, 404)
