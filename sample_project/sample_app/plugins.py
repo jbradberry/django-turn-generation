@@ -28,12 +28,6 @@ class TurnGeneration(object):
     def related_agents(self, realm, agent_type):
         return realm.agents.all()
 
-    def has_perm(self, user, perm, obj):
-        methodname = self.permissions.get(perm)
-        if methodname is None:
-            return False
-        return getattr(self, methodname, None)(user, obj)
-
     def _is_host(self, user, obj):
         return user.is_staff
 

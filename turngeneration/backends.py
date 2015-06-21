@@ -17,4 +17,7 @@ class TurnGenerationBackend(object):
         if plugin is None:
             return False
 
-        return plugin.has_perm(user_obj, perm, obj)
+        methodname = plugin.permissions.get(perm)
+        if methodname is None:
+            return False
+        return getattr(plugin, methodname, None)(user_obj, obj)
