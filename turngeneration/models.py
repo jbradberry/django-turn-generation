@@ -49,8 +49,7 @@ class Generator(models.Model):
     def save(self, *args, **kwargs):
         if self.autogenerate and self.is_ready():
             tasks.ready_generation.apply_async((self.pk,))
-        elif (self.force_generate and not self.task_id
-            and not self.pauses.exists()):
+        elif self.force_generate and not self.task_id:
             eta = self.next_time()
             if eta is not None:
                 task_id = tasks.timed_generation.apply_async(
@@ -74,7 +73,9 @@ class Generator(models.Model):
         if cutoff is None:
             cutoff = datetime.datetime.utcnow()
 
-        return self.rruleset.after(cutoff)
+        nexttime = self.rruleset.after(cutoff)
+        if nexttime is not None:
+            return pytz.utc.localize(nexttime)
 
     @property
     def last_generation(self):
@@ -162,21 +163,6 @@ class Pause(models.Model):
 
     class Meta:
         unique_together = ('content_type', 'object_id', 'generator')
-
-    def delete(self, *args, **kwargs):
-        super(Pause, self).delete(*args, **kwargs)
-
-        generator = self.generator
-
-        if generator.force_generate:
-            if not generator.task_id and not generator.pauses.exists():
-                eta = generator.next_time()
-                if eta is not None:
-                    task_id = tasks.timed_generation.apply_async(
-                        (generator.pk,), eta=eta).id
-                    generator.eta = eta
-                    generator.task_id = task_id
-                    generator.save()
 
 
 class Ready(models.Model):
