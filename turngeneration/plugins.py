@@ -1,7 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from pkg_resources import iter_entry_points
-from rest_framework.compat import get_model_name
 
 
 OVERRIDES = getattr(settings, 'TURNGENERATION_OVERRIDES', {})
@@ -69,7 +68,7 @@ def get_plugin(name):
 
 
 def get_plugin_for_model(obj):
-    ct = '{0}.{1}'.format(obj._meta.app_label, get_model_name(obj))
+    ct = '{0}.{1}'.format(obj._meta.app_label, obj._meta.model_name)
     return get_plugin(ct)
 
 
