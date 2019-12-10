@@ -4,7 +4,7 @@ from rest_framework.test import APITestCase
 from mock import patch, call
 
 from .. import models
-from sample_project.sample_app.models import TestRealm, TestAgent
+from sample_app.models import TestRealm, TestAgent
 
 
 class RealmListViewTestCase(APITestCase):

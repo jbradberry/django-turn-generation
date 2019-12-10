@@ -8,7 +8,7 @@ from dateutil import rrule
 import pytz
 
 from ..models import Generator, GenerationTime, GenerationRule, Pause, Ready
-from sample_project.sample_app.models import TestRealm, TestAgent
+from sample_app.models import TestRealm, TestAgent
 
 
 @patch('turngeneration.tasks.ready_generation')

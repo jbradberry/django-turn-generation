@@ -80,7 +80,7 @@ INSTALLED_APPS = (
     'kombu.transport.django',
     'rest_framework',
     'turngeneration',
-    'sample_project.sample_app',
+    'sample_app',
 )
 
 import djcelery
