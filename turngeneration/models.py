@@ -1,5 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes import fields
 from django.utils import timezone
 from django.db import models
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class Generator(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
     object_id = models.PositiveIntegerField()
-    realm = generic.GenericForeignKey()
+    realm = fields.GenericForeignKey()
 
     generating = models.BooleanField(default=False, blank=True)
 
@@ -154,7 +154,7 @@ class GenerationRule(models.Model):
 class Pause(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
     object_id = models.PositiveIntegerField()
-    agent = generic.GenericForeignKey()
+    agent = fields.GenericForeignKey()
 
     generator = models.ForeignKey(Generator, related_name='pauses')
     user = models.ForeignKey("auth.User", null=True)
@@ -168,7 +168,7 @@ class Pause(models.Model):
 class Ready(models.Model):
     content_type = models.ForeignKey("contenttypes.ContentType")
     object_id = models.PositiveIntegerField()
-    agent = generic.GenericForeignKey()
+    agent = fields.GenericForeignKey()
 
     generator = models.ForeignKey(Generator, related_name='readies')
     user = models.ForeignKey("auth.User", null=True)
