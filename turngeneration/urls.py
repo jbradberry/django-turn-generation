@@ -1,9 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from . import views
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^(?P<realm_alias>[-\w]+)/$', views.RealmListView.as_view(),
         name='realm_list'),
     url(r'^(?P<realm_alias>[-\w]+)/(?P<pk>\d+)/$',
@@ -30,4 +30,4 @@ urlpatterns = patterns('',
     url(r'^(?P<realm_alias>[-\w]+)/(?P<realm_pk>\d+)/(?P<agent_alias>[-\w]+)/(?P<agent_pk>\d+)/ready/$',
         views.ReadyView.as_view(),
         name='ready'),
-)
+]
