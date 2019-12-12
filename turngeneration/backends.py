@@ -2,8 +2,6 @@ from . import plugins
 
 
 class TurnGenerationBackend(object):
-    supports_inactive_user = False
-
     def authenticate(self, **credentials):
         """
         Always return ``None`` to prevent authentication within this backend.

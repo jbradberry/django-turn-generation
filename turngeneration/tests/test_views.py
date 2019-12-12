@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
 from mock import patch, call
@@ -15,7 +15,7 @@ class RealmListViewTestCase(APITestCase):
         self.realm.save()
         self.agent = TestAgent(realm=self.realm, slug='bob')
         self.agent.save()
-        self.client.login(username='test', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
 
     def test_realm_type_does_not_exist(self):
         url = reverse('realm_list',
@@ -41,7 +41,7 @@ class RealmRetrieveViewTestCase(APITestCase):
         self.realm.save()
         self.agent = TestAgent(realm=self.realm, slug='bob')
         self.agent.save()
-        self.client.login(username='test', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
 
     def test_realm_type_does_not_exist(self):
         url = reverse('realm_detail',
@@ -78,7 +78,7 @@ class GeneratorViewTestCase(APITestCase):
         self.realm.save()
         self.agent = TestAgent(realm=self.realm, slug='bob')
         self.agent.save()
-        self.client.login(username='test', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
 
     def test_realm_type_does_not_exist(self):
         url = reverse('generator',
@@ -184,7 +184,7 @@ class GenerationRuleListViewTestCase(APITestCase):
         self.realm.save()
         self.agent = TestAgent(realm=self.realm, slug='bob')
         self.agent.save()
-        self.client.login(username='test', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
 
     def test_realm_type_does_not_exist(self):
         url = reverse('generation_rules_list',
@@ -268,7 +268,7 @@ class GenerationRuleViewTestCase(APITestCase):
         self.realm.save()
         self.agent = TestAgent(realm=self.realm, slug='bob')
         self.agent.save()
-        self.client.login(username='test', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
         self.generator = models.Generator(realm=self.realm)
         self.generator.save()
         self.rule = models.GenerationRule(generator=self.generator)
@@ -385,7 +385,7 @@ class AgentListViewTestCase(APITestCase):
         self.realm.save()
         self.agent = TestAgent(realm=self.realm, slug='bob')
         self.agent.save()
-        self.client.login(username='test', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
 
     def test_realm_type_does_not_exist(self):
         realm_url = reverse('agent_list',
@@ -445,7 +445,7 @@ class AgentRetrieveViewTestCase(APITestCase):
         self.realm.save()
         self.agent1 = self.realm.agents.create(slug='agent1')
         self.agent2 = self.realm.agents.create(slug='agent2')
-        self.client.login(username='test', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
 
     def test_realm_type_does_not_exist(self):
         realm_url = reverse('agent_detail',
@@ -591,7 +591,7 @@ class PauseViewTestCase(APITestCase):
         self.realm.save()
         self.agent1 = self.realm.agents.create(slug='agent1')
         self.agent2 = self.realm.agents.create(slug='agent2')
-        self.client.login(username='test', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
 
     def test_realm_type_does_not_exist(self):
         self.assertEqual(models.Pause.objects.count(), 0)
@@ -894,7 +894,7 @@ class ReadyViewTestCase(APITestCase):
         self.realm.save()
         self.agent1 = self.realm.agents.create(slug='agent1')
         self.agent2 = self.realm.agents.create(slug='agent2')
-        self.client.login(username='test', password='password')
+        self.assertTrue(self.client.login(username='test', password='password'))
 
     def test_realm_type_does_not_exist(self):
         self.assertEqual(models.Ready.objects.count(), 0)

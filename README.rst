@@ -9,7 +9,8 @@ Requirements
 ------------
 
 - Python 2.7, 3.5+
-- Django >= 1.8, < 2.0
+- Django >= 1.10, < 2.3
+- djangorestframework >= 3.7
 - Celery >= 3.1
 - `djangorestframework <http://www.django-rest-framework.org/>`_ >= 3.1
 - python-dateutil
