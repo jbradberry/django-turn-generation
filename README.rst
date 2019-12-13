@@ -2,6 +2,9 @@
 django-turn-generation
 ======================
 
+.. image:: https://travis-ci.com/jbradberry/django-turn-generation.svg?branch=master
+    :target: https://travis-ci.com/jbradberry/django-turn-generation
+
 A Django app for specifying the timing of and triggering turn
 generation for turn-based strategy games.
 
