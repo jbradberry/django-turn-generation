@@ -40,7 +40,7 @@ class PluginPermissions(permissions.DjangoObjectPermissions):
 
         return (
             request.user and
-            (request.user.is_authenticated() or not self.authenticated_users_only) and
+            (request.user.is_authenticated or not self.authenticated_users_only) and
             request.user.has_perms(perms, parent)
         )
 

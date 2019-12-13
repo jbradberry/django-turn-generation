@@ -2,7 +2,7 @@ from . import plugins
 
 
 class TurnGenerationBackend(object):
-    def authenticate(self, **credentials):
+    def authenticate(self, request, **credentials):
         """
         Always return ``None`` to prevent authentication within this backend.
         """

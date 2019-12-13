@@ -89,6 +89,11 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = []
 
+AUTHENTICATION_BACKENDS = [
+    'turngeneration.backends.TurnGenerationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
