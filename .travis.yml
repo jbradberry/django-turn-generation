@@ -7,6 +7,8 @@ python:
   # - 3.6
   - 3.7
   # - 3.8
+services:
+  - rabbitmq
 env:
   # - DJANGO=1.10 DRF=3.7
   # - DJANGO=1.10 DRF=3.8
