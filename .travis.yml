@@ -1,5 +1,9 @@
 sudo: false
 dist: bionic
+addons:
+  apt:
+    packages:
+      - rabbitmq-server
 language: python
 python:
   # - 2.7
