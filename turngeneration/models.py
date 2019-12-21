@@ -1,7 +1,8 @@
+from django.contrib.contenttypes import fields
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.contenttypes import generic
-from django.utils import timezone
+from django.core.validators import validate_comma_separated_integer_list
 from django.db import models
+from django.utils import timezone
 
 from celery import current_app as celery
 from dateutil import rrule
@@ -15,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 class Generator(models.Model):
-    content_type = models.ForeignKey("contenttypes.ContentType")
+    content_type = models.ForeignKey("contenttypes.ContentType", on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    realm = generic.GenericForeignKey()
+    realm = fields.GenericForeignKey()
 
     generating = models.BooleanField(default=False, blank=True)
 
@@ -86,7 +87,7 @@ class Generator(models.Model):
 
 
 class GenerationTime(models.Model):
-    generator = models.ForeignKey(Generator, related_name='timestamps')
+    generator = models.ForeignKey(Generator, on_delete=models.CASCADE, related_name='timestamps')
     timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -107,7 +108,7 @@ class GenerationRule(models.Model):
         # ignore SECONDLY
     )
 
-    generator = models.ForeignKey(Generator, related_name='rules')
+    generator = models.ForeignKey(Generator, on_delete=models.CASCADE, related_name='rules')
 
     freq = models.PositiveSmallIntegerField(choices=FREQUENCIES,
                                             default=rrule.DAILY, blank=True)
@@ -120,14 +121,14 @@ class GenerationRule(models.Model):
     count = models.PositiveIntegerField(blank=True, null=True)
     until = models.DateTimeField(blank=True, null=True)
 
-    bysetpos = models.CommaSeparatedIntegerField(max_length=64, blank=True)
-    bymonth = models.CommaSeparatedIntegerField(max_length=64, blank=True)
-    bymonthday = models.CommaSeparatedIntegerField(max_length=64, blank=True)
-    byyearday = models.CommaSeparatedIntegerField(max_length=64, blank=True)
-    byweekno = models.CommaSeparatedIntegerField(max_length=64, blank=True)
-    byweekday = models.CommaSeparatedIntegerField(max_length=64, blank=True)
-    byhour = models.CommaSeparatedIntegerField(max_length=64, blank=True)
-    byminute = models.CommaSeparatedIntegerField(max_length=64, blank=True)
+    bysetpos = models.CharField(max_length=64, blank=True, validators=[validate_comma_separated_integer_list])
+    bymonth = models.CharField(max_length=64, blank=True, validators=[validate_comma_separated_integer_list])
+    bymonthday = models.CharField(max_length=64, blank=True, validators=[validate_comma_separated_integer_list])
+    byyearday = models.CharField(max_length=64, blank=True, validators=[validate_comma_separated_integer_list])
+    byweekno = models.CharField(max_length=64, blank=True, validators=[validate_comma_separated_integer_list])
+    byweekday = models.CharField(max_length=64, blank=True, validators=[validate_comma_separated_integer_list])
+    byhour = models.CharField(max_length=64, blank=True, validators=[validate_comma_separated_integer_list])
+    byminute = models.CharField(max_length=64, blank=True, validators=[validate_comma_separated_integer_list])
     # ignore bysecond and byeaster
 
     @property
@@ -152,12 +153,12 @@ class GenerationRule(models.Model):
 
 
 class Pause(models.Model):
-    content_type = models.ForeignKey("contenttypes.ContentType")
+    content_type = models.ForeignKey("contenttypes.ContentType", on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    agent = generic.GenericForeignKey()
+    agent = fields.GenericForeignKey()
 
-    generator = models.ForeignKey(Generator, related_name='pauses')
-    user = models.ForeignKey("auth.User", null=True)
+    generator = models.ForeignKey(Generator, on_delete=models.CASCADE, related_name='pauses')
+    user = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True)
     timestamp = models.DateTimeField(auto_now=True)
     reason = models.TextField()
 
@@ -166,12 +167,12 @@ class Pause(models.Model):
 
 
 class Ready(models.Model):
-    content_type = models.ForeignKey("contenttypes.ContentType")
+    content_type = models.ForeignKey("contenttypes.ContentType", on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    agent = generic.GenericForeignKey()
+    agent = fields.GenericForeignKey()
 
-    generator = models.ForeignKey(Generator, related_name='readies')
-    user = models.ForeignKey("auth.User", null=True)
+    generator = models.ForeignKey(Generator, on_delete=models.CASCADE, related_name='readies')
+    user = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True)
     timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:

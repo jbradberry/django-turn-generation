@@ -21,13 +21,13 @@ def _populate_realms():
 
             _realm_types.update(
                 (alias, ContentType.objects.get_by_natural_key(*ct.split('.')))
-                for alias, ct in plugin_realm_types.iteritems()
+                for alias, ct in plugin_realm_types.items()
                 if ct
             )
 
             _plugins.update(
                 (ct, plugin)
-                for alias, ct in plugin_realm_types.iteritems()
+                for alias, ct in plugin_realm_types.items()
                 if ct
             )
 
@@ -43,13 +43,13 @@ def _populate_agents():
 
             _agent_types.update(
                 (alias, ContentType.objects.get_by_natural_key(*ct.split('.')))
-                for alias, ct in plugin_agent_types.iteritems()
+                for alias, ct in plugin_agent_types.items()
                 if ct
             )
 
             _plugins.update(
                 (ct, plugin)
-                for alias, ct in plugin_agent_types.iteritems()
+                for alias, ct in plugin_agent_types.items()
                 if ct
             )
 

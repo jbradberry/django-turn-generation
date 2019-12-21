@@ -1,7 +1,7 @@
 from django.test import TestCase
 from mock import patch
 
-from sample_project.sample_app.models import TestRealm
+from sample_app.models import TestRealm
 from ..models import Generator, GenerationTime, Ready, Pause
 
 
