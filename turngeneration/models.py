@@ -183,5 +183,5 @@ class Ready(models.Model):
 
         if self.generator.autogenerate and self.generator.is_ready():
             logger.debug(
-                "Triggering autogeneration for: {0}".format(self.generator.pk))
+                f"Triggering autogeneration for: {self.generator.pk}")
             result = tasks.ready_generation.apply_async((self.generator.pk,))

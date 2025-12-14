@@ -6,7 +6,7 @@ from . import models
 
 class ContentTypeField(serializers.Field):
     def to_representation(self, value):
-        return u'{value.app_label}.{value.model}'.format(value=value)
+        return f'{value.app_label}.{value.model}'
 
     def to_internal_value(self, data):
         app_label, model = data.split('.')
@@ -22,7 +22,7 @@ class ReadOnlyDefault:
         return self.current_value
 
     def __repr__(self):
-        return '%s()' % (self.__class__.__name__,)
+        return f'{self.__class__.__name__}()'
 
 
 class GeneratorSerializer(serializers.ModelSerializer):
@@ -46,7 +46,7 @@ class RealmSerializer(serializers.Serializer):
 
     def get_content_type(self, obj):
         ct = ContentType.objects.get_for_model(obj)
-        return u'{ct.app_label}.{ct.model}'.format(ct=ct)
+        return f'{ct.app_label}.{ct.model}'
 
     def get_generator(self, obj):
         ct = ContentType.objects.get_for_model(obj)
@@ -132,7 +132,7 @@ class AgentSerializer(serializers.Serializer):
 
     def get_content_type(self, obj):
         ct = ContentType.objects.get_for_model(obj)
-        return u'{ct.app_label}.{ct.model}'.format(ct=ct)
+        return f'{ct.app_label}.{ct.model}'
 
     def get_pause(self, obj):
         ct = ContentType.objects.get_for_model(obj)

@@ -20,21 +20,17 @@ def timed_generation(self, pk):
         realm_type = generator.content_type
         realm = generator.realm
     except Exception as e:
-        logger.exception("Failed timed_generation(pk={pk}).".format(pk=pk))
+        logger.exception(f"Failed timed_generation(pk={pk}).")
         raise
 
     logger.info(
-        "Beginning timed generation on {app}.{model}(pk={pk}).".format(
-            app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+        f"Beginning timed generation on {realm_type.app_label}.{realm_type.model}(pk={realm.pk})."
     )
 
     # Lock against another task generating on the same Generator.
-    if not models.Generator.objects.filter(
-            pk=pk, generating=False).update(generating=True):
+    if not models.Generator.objects.filter(pk=pk, generating=False).update(generating=True):
         logger.warning(
-            "Generation already in progress on {app}.{model}(pk={pk}),"
-            " aborting.".format(
-                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+            f"Generation already in progress on {realm_type.app_label}.{realm_type.model}(pk={realm.pk}), aborting."
         )
         # Any update of the generator or firing of a new task should
         # be dealt with by the task holding the lock.
@@ -42,9 +38,7 @@ def timed_generation(self, pk):
 
     if not generator.force_generate:
         logger.info(
-            "Force-generation is disabled on {app}.{model}(pk={pk}),"
-            " aborting.".format(
-                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+            f"Force-generation is disabled on {realm_type.app_label}.{realm_type.model}(pk={realm.pk}), aborting."
         )
         # No need to fire off a new task, since force-generations will
         # be disabled until the boolean is cleared, and then the
@@ -56,8 +50,7 @@ def timed_generation(self, pk):
 
     if generator.allow_pauses and generator.pauses.exists():
         logger.info(
-            "Pauses in effect on {app}.{model}(pk={pk}), aborting.".format(
-                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+            f"Pauses in effect on {realm_type.app_label}.{realm_type.model}(pk={realm.pk}), aborting."
         )
         # If the generator is paused, don't bother creating a new timed task.
         # It'll get picked back up when the pause is cancelled.
@@ -72,9 +65,7 @@ def timed_generation(self, pk):
     last = generator.last_generation
     if last and last + generator.minimum_between_generations > now:
         logger.info(
-            "Insufficient time since last generation on {app}.{model}(pk={pk})"
-            ", aborting.".format(
-                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+            f"Insufficient time since last generation on {realm_type.app_label}.{realm_type.model}(pk={realm.pk}), aborting."
         )
         generate = False
 
@@ -85,8 +76,7 @@ def timed_generation(self, pk):
         except Exception as e:
             # TODO: consider doing a transaction rollback here
             logger.exception(
-                "Generation failed on {app}.{model}(pk={pk}).".format(
-                    app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+                f"Generation failed on {realm_type.app_label}.{realm_type.model}(pk={realm.pk})."
             )
             generate = False
         else:
@@ -104,8 +94,7 @@ def timed_generation(self, pk):
 
     if generate:
         logger.info(
-            "Ending timed generation on {app}.{model}(pk={pk}).".format(
-                app=realm_type.app_label, model=realm_type.model, pk=pk)
+            f"Ending timed generation on {realm_type.app_label}.{realm_type.model}(pk={pk})."
         )
 
 
@@ -118,21 +107,18 @@ def ready_generation(self, pk):
         realm_type = generator.content_type
         realm = generator.realm
     except Exception as e:
-        logger.exception("Failed timed_generation(pk={pk}).".format(pk=pk))
+        logger.exception(f"Failed timed_generation(pk={pk}).")
         raise
 
     logger.info(
-        "Beginning auto-generation on {app}.{model}(pk={pk}).".format(
-            app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+        f"Beginning auto-generation on {realm_type.app_label}.{realm_type.model}(pk={realm.pk})."
     )
 
     # Lock against another task generating on the same Generator.
     if not models.Generator.objects.filter(
             pk=pk, generating=False).update(generating=True):
         logger.warning(
-            "Generation already in progress on {app}.{model}(pk={pk}),"
-            " aborting.".format(
-                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+            f"Generation already in progress on {realm_type.app_label}.{realm_type.model}(pk={realm.pk}), aborting."
         )
         # Any update of the generator or firing of a new task should
         # be dealt with by the task holding the lock.
@@ -140,9 +126,7 @@ def ready_generation(self, pk):
 
     if not generator.autogenerate:
         logger.info(
-            "Auto-generation not permitted on {app}.{model}(pk={pk}),"
-            " aborting.".format(
-                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+            f"Auto-generation not permitted on {realm_type.app_label}.{realm_type.model}(pk={realm.pk}), aborting."
         )
         models.Generator.objects.filter(pk=pk).update(generating=False)
         return
@@ -150,9 +134,7 @@ def ready_generation(self, pk):
     try:
         if not generator.is_ready():
             logger.info(
-                "Not ready for auto-generation on {app}.{model}(pk={pk}),"
-                " aborting.".format(
-                    app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+                f"Not ready for auto-generation on {realm_type.app_label}.{realm_type.model}(pk={realm.pk}), aborting."
             )
             models.Generator.objects.filter(pk=pk).update(generating=False)
             return
@@ -162,8 +144,7 @@ def ready_generation(self, pk):
     except Exception as e:
         # TODO: consider doing a transaction rollback here
         logger.exception(
-            "Generation failed on {app}.{model}(pk={pk}).".format(
-                app=realm_type.app_label, model=realm_type.model, pk=realm.pk)
+            f"Generation failed on {realm_type.app_label}.{realm_type.model}(pk={realm.pk})."
         )
         models.Generator.objects.filter(pk=pk).update(generating=False)
         return
@@ -182,6 +163,5 @@ def ready_generation(self, pk):
                                                   task_id=task_id,
                                                   generation_time=eta)
     logger.info(
-        "Ending auto-generation on {app}.{model}(pk={pk}).".format(
-            app=realm_type.app_label, model=realm_type.model, pk=pk)
+        f"Ending auto-generation on {realm_type.app_label}.{realm_type.model}(pk={pk})."
     )

@@ -68,7 +68,7 @@ def get_plugin(name):
 
 
 def get_plugin_for_model(obj):
-    ct = '{0}.{1}'.format(obj._meta.app_label, obj._meta.model_name)
+    ct = f'{obj._meta.app_label}.{obj._meta.model_name}'
     return get_plugin(ct)
 
 
