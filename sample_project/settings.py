@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Application definition
 
@@ -114,5 +115,4 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-BROKER_URL = 'django://'
-CELERY_ALWAYS_EAGER = True
+CELERY_BROKER_URL = 'memory://localhost/'

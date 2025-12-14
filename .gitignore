@@ -4,3 +4,5 @@
 *.egg-info
 MANIFEST
 *.db3
+**/build
+**/dist
