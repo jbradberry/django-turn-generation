@@ -39,7 +39,7 @@ class Generator(models.Model):
         from . import plugins
         plugin = plugins.get_plugin_for_model(self.realm)
 
-        readies = set(ready.agent for ready in self.readies.all())
+        readies = {ready.agent for ready in self.readies.select_related('content_type')}
         if not readies:
             return False
         agents = plugin.related_agents(self.realm)
