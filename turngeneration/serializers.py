@@ -13,7 +13,7 @@ class ContentTypeField(serializers.Field):
         return ContentType.objects.get_by_natural_key(app_label, model)
 
 
-class ReadOnlyDefault(object):
+class ReadOnlyDefault:
     def set_context(self, serializer_field):
         self.current_value = getattr(serializer_field.parent.instance,
                                      serializer_field.field_name, None)
@@ -30,7 +30,7 @@ class GeneratorSerializer(serializers.ModelSerializer):
     object_id = serializers.IntegerField(read_only=True,
                                          default=ReadOnlyDefault())
 
-    class Meta(object):
+    class Meta:
         model = models.Generator
         fields = ('content_type', 'object_id', 'generating',
                   'generation_time', 'force_generate', 'autogenerate',

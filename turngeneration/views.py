@@ -39,7 +39,7 @@ class CrudAPIView(mixins.CreateModelMixin,
         return self.destroy(request, *args, **kwargs)
 
 
-class RealmQuerysetMixin(object):
+class RealmQuerysetMixin:
     serializer_class = serializers.RealmSerializer
 
     def get_queryset(self):
@@ -60,7 +60,7 @@ class RealmRetrieveView(RealmQuerysetMixin, generics.RetrieveAPIView):
     pass
 
 
-class GeneratorMixin(object):
+class GeneratorMixin:
     def get_generator(self, queryset):
         realm = self.get_realm()
 
@@ -161,7 +161,7 @@ class GenerationRuleView(GeneratorMixin, generics.RetrieveUpdateDestroyAPIView):
         return generator.rules.all()
 
 
-class AgentQuerysetMixin(object):
+class AgentQuerysetMixin:
     def get_queryset(self):
         generator = self.get_generator(models.Generator.objects.all())
         agent_type = plugins.agent_type(self.kwargs.get('agent_alias'))
@@ -191,7 +191,7 @@ class AgentRetrieveView(AgentQuerysetMixin, GeneratorMixin,
     serializer_class = serializers.AgentSerializer
 
 
-class AgentMixin(object):
+class AgentMixin:
     def get_agent(self):
         realm = self.get_realm()
         generator = self.get_generator(models.Generator.objects.all())
