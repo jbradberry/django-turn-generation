@@ -11,7 +11,7 @@ from rest_framework.settings import api_settings
 
 import logging
 
-from . import models, forms, plugins, serializers
+from . import models, forms, serializers
 from .permissions import PluginPermissions
 
 logger = logging.getLogger(__name__)
@@ -44,6 +44,7 @@ class RealmQuerysetMixin:
 
     def get_queryset(self):
         alias = self.kwargs.get('realm_alias')
+        from . import plugins
         ct = plugins.realm_type(alias)
         if ct is None:
             raise Http404
@@ -79,6 +80,7 @@ class GeneratorMixin:
             return self._realm
 
         alias = self.kwargs.get('realm_alias')
+        from . import plugins
         ct = plugins.realm_type(alias)
         pk = self.kwargs.get('realm_pk')
 
@@ -164,6 +166,7 @@ class GenerationRuleView(GeneratorMixin, generics.RetrieveUpdateDestroyAPIView):
 class AgentQuerysetMixin:
     def get_queryset(self):
         generator = self.get_generator(models.Generator.objects.all())
+        from . import plugins
         agent_type = plugins.agent_type(self.kwargs.get('agent_alias'))
 
         if agent_type is None:
@@ -200,6 +203,7 @@ class AgentMixin:
             return self._agent
 
         alias = self.kwargs.get('agent_alias')
+        from . import plugins
         ct = plugins.agent_type(alias)
         pk = self.kwargs.get('agent_pk')
 
