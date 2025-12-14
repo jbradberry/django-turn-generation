@@ -33,7 +33,7 @@ class Generator(models.Model):
         null=True, blank=True)
 
     class Meta:
-        unique_together = ('content_type', 'object_id')
+        constraints = [models.UniqueConstraint(fields=('content_type', 'object_id'), name='generator_unique_generic_fk')]
 
     def is_ready(self):
         from . import plugins
@@ -164,7 +164,7 @@ class Pause(models.Model):
     reason = models.TextField()
 
     class Meta:
-        unique_together = ('content_type', 'object_id', 'generator')
+        constraints = [models.UniqueConstraint(fields=('content_type', 'object_id', 'generator'), name='pause_per_generator_and_agent')]
 
 
 class Ready(models.Model):
@@ -177,7 +177,7 @@ class Ready(models.Model):
     timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('content_type', 'object_id', 'generator')
+        constraints = [models.UniqueConstraint(fields=('content_type', 'object_id', 'generator'), name='ready_per_generator_and_agent')]
 
     def save(self, *args, **kwargs):
         super(Ready, self).save(*args, **kwargs)
