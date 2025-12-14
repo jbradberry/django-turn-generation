@@ -1,3 +1,6 @@
+import datetime
+import logging
+
 from django.contrib.contenttypes import fields
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import validate_comma_separated_integer_list
@@ -6,9 +9,7 @@ from django.utils import timezone
 
 from celery import current_app as celery
 from dateutil import rrule
-import datetime
 import pytz
-import logging
 
 from . import tasks
 
@@ -182,6 +183,5 @@ class Ready(models.Model):
         super(Ready, self).save(*args, **kwargs)
 
         if self.generator.autogenerate and self.generator.is_ready():
-            logger.debug(
-                f"Triggering autogeneration for: {self.generator.pk}")
+            logger.debug(f"Triggering autogeneration for: {self.generator.pk}")
             result = tasks.ready_generation.apply_async((self.generator.pk,))
