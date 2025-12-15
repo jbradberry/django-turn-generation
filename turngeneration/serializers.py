@@ -50,10 +50,8 @@ class RealmSerializer(serializers.Serializer):
 
     def get_generator(self, obj):
         ct = ContentType.objects.get_for_model(obj)
-        try:
-            generator = models.Generator.objects.get(
-                content_type=ct, object_id=obj.pk)
-        except models.Generator.DoesNotExist:
+        generator = models.Generator.objects.filter(content_type=ct, object_id=obj.pk).first()
+        if generator is None:
             return None
 
         return GeneratorSerializer(generator).data
@@ -136,18 +134,16 @@ class AgentSerializer(serializers.Serializer):
 
     def get_pause(self, obj):
         ct = ContentType.objects.get_for_model(obj)
-        try:
-            pause = models.Pause.objects.get(content_type=ct, object_id=obj.pk)
-        except models.Pause.DoesNotExist:
+        pause = models.Pause.objects.filter(content_type=ct, object_id=obj.pk).first()
+        if pause is None:
             return None
 
         return PauseSerializer(pause).data
 
     def get_ready(self, obj):
         ct = ContentType.objects.get_for_model(obj)
-        try:
-            ready = models.Ready.objects.get(content_type=ct, object_id=obj.pk)
-        except models.Ready.DoesNotExist:
+        ready = models.Ready.objects.filter(content_type=ct, object_id=obj.pk).first()
+        if ready is None:
             return None
 
         return ReadySerializer(ready).data
