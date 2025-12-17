@@ -1,6 +1,7 @@
+from importlib.metadata import entry_points
+
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
-from pkg_resources import iter_entry_points
 
 
 OVERRIDES = getattr(settings, 'TURNGENERATION_OVERRIDES', {})
@@ -12,7 +13,7 @@ _plugins = {}
 
 def _populate_realms():
     if not _realm_types:
-        for ep in iter_entry_points('turngeneration.plugins'):
+        for ep in entry_points(group='turngeneration.plugins'):
             plugin = ep.load()
             plugin_realm_types = dict(getattr(plugin, 'realm_types', {}))
             plugin_realm_types.update(
@@ -34,7 +35,7 @@ def _populate_realms():
 
 def _populate_agents():
     if not _agent_types:
-        for ep in iter_entry_points('turngeneration.plugins'):
+        for ep in entry_points(group='turngeneration.plugins'):
             plugin = ep.load()
             plugin_agent_types = dict(getattr(plugin, 'agent_types', {}))
             plugin_agent_types.update(
