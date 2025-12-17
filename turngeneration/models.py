@@ -48,20 +48,21 @@ class Generator(models.Model):
 
         return all(agent in readies for agent in agents)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs):  # FIXME: should we really be triggering when Generator is saved?
+        super(Generator, self).save(*args, **kwargs)
+
         if self.autogenerate and self.is_ready():
             tasks.ready_generation.apply_async((self.pk,))
         elif self.force_generate and not self.task_id:
             eta = self.next_time()
             if eta is not None:
-                task_id = tasks.timed_generation.apply_async(
-                    (self.pk,), eta=eta).id
+                task_id = tasks.timed_generation.apply_async((self.pk,), eta=eta).id
+                Generator.objects.filter(id=self.id).update(task_id=task_id, generation_time=eta)
                 self.task_id, self.generation_time = task_id, eta
         elif not self.force_generate and self.task_id:
             celery.control.revoke(self.task_id)
+            Generator.objects.filter(id=self.id).update(task_id='', generation_time=None)
             self.task_id, self.generation_time = '', None
-
-        super(Generator, self).save(*args, **kwargs)
 
     @property
     def rruleset(self):
