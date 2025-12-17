@@ -1,0 +1,17 @@
+[project]
+name = "sample-app"
+version = "0.1.0"
+requires-python = ">= 3.10"
+authors = [
+  {name = "Jeff Bradberry", email = "jeff.bradberry@gmail.com"},
+]
+
+[project.entry-points."turngeneration.plugins"]
+sample_app = "sample_app.plugins:TurnGeneration"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["sample_app"]
