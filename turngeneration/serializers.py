@@ -13,29 +13,15 @@ class ContentTypeField(serializers.Field):
         return ContentType.objects.get_by_natural_key(app_label, model)
 
 
-class ReadOnlyDefault:
-    def set_context(self, serializer_field):
-        self.current_value = getattr(serializer_field.parent.instance,
-                                     serializer_field.field_name, None)
-
-    def __call__(self):
-        return self.current_value
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}()'
-
-
 class GeneratorSerializer(serializers.ModelSerializer):
-    content_type = ContentTypeField(read_only=True, default=ReadOnlyDefault())
-    object_id = serializers.IntegerField(read_only=True,
-                                         default=ReadOnlyDefault())
+    content_type = ContentTypeField(read_only=True)
 
     class Meta:
         model = models.Generator
         fields = ('content_type', 'object_id', 'generating',
                   'generation_time', 'force_generate', 'autogenerate',
                   'allow_pauses', 'minimum_between_generations')
-        read_only_fields = ('generating', 'generation_time')
+        read_only_fields = ('content_type', 'object_id', 'generating', 'generation_time')
 
 
 class RealmSerializer(serializers.Serializer):
@@ -58,22 +44,17 @@ class RealmSerializer(serializers.Serializer):
 
 
 class GenerationRuleSerializer(serializers.ModelSerializer):
-    generator_id = serializers.IntegerField(read_only=True)
-
     class Meta:
         model = models.GenerationRule
         fields = ('id', 'generator_id', 'freq', 'dtstart', 'interval', 'count',
                   'until', 'bysetpos', 'bymonth', 'bymonthday', 'byyearday',
                   'byweekno', 'byweekday', 'byhour', 'byminute')
-        read_only_fields = ('id',)
+        read_only_fields = ('id', 'generator_id')
 
 
 class PauseSerializer(serializers.ModelSerializer):
-    content_type = ContentTypeField(read_only=True, default=ReadOnlyDefault())
-    object_id = serializers.IntegerField(read_only=True,
-                                         default=ReadOnlyDefault())
-    generator = serializers.PrimaryKeyRelatedField(read_only=True,
-                                                   default=ReadOnlyDefault())
+    content_type = ContentTypeField(read_only=True)
+    generator = serializers.PrimaryKeyRelatedField(read_only=True)
 
     user = serializers.SlugRelatedField(
         slug_field='username',
@@ -85,21 +66,12 @@ class PauseSerializer(serializers.ModelSerializer):
         model = models.Pause
         fields = ('content_type', 'object_id', 'generator',
                   'user', 'timestamp', 'reason')
-        read_only_fields = ('user', 'timestamp')
-        validators = [
-            validators.UniqueTogetherValidator(
-                queryset=models.Pause.objects.all(),
-                fields=('content_type', 'object_id', 'generator'),
-            )
-        ]
+        read_only_fields = ('content_type', 'object_id', 'generator', 'user', 'timestamp')
 
 
 class ReadySerializer(serializers.ModelSerializer):
-    content_type = ContentTypeField(read_only=True, default=ReadOnlyDefault())
-    object_id = serializers.IntegerField(read_only=True,
-                                         default=ReadOnlyDefault())
-    generator = serializers.PrimaryKeyRelatedField(read_only=True,
-                                                   default=ReadOnlyDefault())
+    content_type = ContentTypeField(read_only=True)
+    generator = serializers.PrimaryKeyRelatedField(read_only=True)
 
     user = serializers.SlugRelatedField(
         slug_field='username',
@@ -111,13 +83,7 @@ class ReadySerializer(serializers.ModelSerializer):
         model = models.Ready
         fields = ('content_type', 'object_id', 'generator',
                   'user', 'timestamp')
-        read_only_fields = ('user', 'timestamp')
-        validators = [
-            validators.UniqueTogetherValidator(
-                queryset=models.Ready.objects.all(),
-                fields=('content_type', 'object_id', 'generator'),
-            )
-        ]
+        read_only_fields = ('content_type', 'object_id', 'generator', 'user', 'timestamp')
 
 
 class AgentSerializer(serializers.Serializer):

@@ -1076,8 +1076,7 @@ class ReadyViewTestCase(APITestCase):
 
         response = self.client.post(realm_url, follow=True)
         self.assertContains(response,
-            "The fields content_type, object_id, generator must make a"
-            " unique set.",
+            "The fields content_type, object_id, generator must make a unique set.",
             status_code=400
         )
 

@@ -4,8 +4,8 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.conf import settings
 
-from rest_framework import generics, viewsets, mixins
-from rest_framework import status
+from rest_framework import generics, viewsets, mixins, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
@@ -204,7 +204,7 @@ class AgentMixin:
 
         alias = self.kwargs.get('agent_alias')
         from . import plugins
-        ct = plugins.agent_type(alias)
+        self._agent_type = ct = plugins.agent_type(alias)
         pk = self.kwargs.get('agent_pk')
 
         if ct is None:
@@ -234,6 +234,8 @@ class PauseView(AgentMixin, GeneratorMixin, CrudAPIView):
         if not generator.allow_pauses:
             raise PermissionDenied
 
+        if models.Pause.objects.filter(generator=generator, content_type=self._agent_type, object_id=agent.id).exists():
+            raise ValidationError("The fields content_type, object_id, generator must make a unique set.")
         instance = models.Pause(generator=generator, agent=agent)
 
         serializer = self.get_serializer(instance=instance, data=request.data)
@@ -270,6 +272,8 @@ class ReadyView(AgentMixin, GeneratorMixin, CrudAPIView):
         generator = self.get_generator(models.Generator.objects.all())
         agent = self.get_agent()
 
+        if models.Ready.objects.filter(generator=generator, content_type=self._agent_type, object_id=agent.id).exists():
+            raise ValidationError("The fields content_type, object_id, generator must make a unique set.")
         instance = models.Ready(generator=generator, agent=agent)
 
         serializer = self.get_serializer(instance=instance, data=request.data)
