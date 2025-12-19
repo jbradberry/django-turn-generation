@@ -97,23 +97,23 @@ class GenerationTime(models.Model):
         get_latest_by = "timestamp"
 
 
+class GenerationFrequency(models.IntegerChoices):
+    YEARLY = rrule.YEARLY, "Yearly"
+    MONTHLY = rrule.MONTHLY, "Monthly"
+    WEEKLY = rrule.WEEKLY, "Weekly"
+    DAILY = rrule.DAILY, "Daily"
+    HOURLY = rrule.HOURLY, "Hourly"
+    MINUTELY = rrule.MINUTELY, "Minutely"
+    # ignore SECONDLY
+
+
 # FIXME: when a new one is saved and the generator doesn't already
 # have a task queued, check to see if we should queue one.
 class GenerationRule(models.Model):
-    FREQUENCIES = (
-        (rrule.YEARLY, 'Yearly'),
-        (rrule.MONTHLY, 'Monthly'),
-        (rrule.WEEKLY, 'Weekly'),
-        (rrule.DAILY, 'Daily'),
-        (rrule.HOURLY, 'Hourly'),
-        (rrule.MINUTELY, 'Minutely'),
-        # ignore SECONDLY
-    )
-
     generator = models.ForeignKey(Generator, on_delete=models.CASCADE, related_name='rules')
 
-    freq = models.PositiveSmallIntegerField(choices=FREQUENCIES,
-                                            default=rrule.DAILY, blank=True)
+    freq = models.PositiveSmallIntegerField(choices=GenerationFrequency.choices,
+                                            default=GenerationFrequency.DAILY, blank=True)
 
     # NOTE: The resultant next_time will depend on the datetime that
     # it is called if the user does not fill out the dtstart field.
