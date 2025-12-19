@@ -1,8 +1,10 @@
+import datetime
+
 from django.conf import settings
+from django.utils import timezone
+
 from celery import shared_task, current_app
 from celery.utils.log import get_task_logger
-
-import datetime
 
 
 logger = get_task_logger(__name__)
@@ -61,13 +63,13 @@ def timed_generation(self, pk):
 
     generate = True
 
-    now = datetime.datetime.utcnow()
     last = generator.last_generation
-    if last and last + generator.minimum_between_generations > now:
-        logger.info(
-            f"Insufficient time since last generation on {realm_type.app_label}.{realm_type.model}(pk={realm.pk}), aborting."
-        )
-        generate = False
+    if last and generator.minimum_between_generations:
+        if last.timestamp + datetime.timedelta(seconds=generator.minimum_between_generations) > timezone.now():
+            logger.info(
+                f"Insufficient time since last generation on {realm_type.app_label}.{realm_type.model}(pk={realm.pk}), aborting."
+            )
+            generate = False
 
     if generate:
         try:
@@ -107,7 +109,7 @@ def ready_generation(self, pk):
         realm_type = generator.content_type
         realm = generator.realm
     except Exception as e:
-        logger.exception(f"Failed timed_generation(pk={pk}).")
+        logger.exception(f"Failed ready_generation(pk={pk}).")
         raise
 
     logger.info(

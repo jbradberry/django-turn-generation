@@ -4,5 +4,6 @@
 *.egg-info
 MANIFEST
 *.db3
+*.sqlite3
 **/build
 **/dist
