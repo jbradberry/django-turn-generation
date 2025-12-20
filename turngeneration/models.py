@@ -74,11 +74,10 @@ class Generator(models.Model):
 
     def next_time(self, cutoff=None):
         if cutoff is None:
-            cutoff = datetime.datetime.utcnow()
+            cutoff = timezone.now()
 
         nexttime = self.rruleset.after(cutoff)
-        if nexttime is not None:
-            return pytz.utc.localize(nexttime)
+        return nexttime
 
     @property
     def last_generation(self):
@@ -145,8 +144,6 @@ class GenerationRule(models.Model):
             value = getattr(self, field, None)
             if field in comma_fields:
                 value = [int(x.strip()) for x in value.split(',') if x.strip()]
-            if field in datetime_fields and value is not None:
-                value = value.replace(tzinfo=None)
             if value is None or value == []:
                 continue
             kwargs[field] = value

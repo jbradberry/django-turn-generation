@@ -166,7 +166,7 @@ class GenerationRuleTestCase(TestCase):
         self.generator = Generator(realm=self.realm)
         self.generator.save()
 
-        self.now = datetime.datetime(2014, 11, 30, 10)
+        self.now = datetime.datetime(2014, 11, 30, 10, tzinfo=pytz.utc)
 
     def test_empty(self):
         next_time = self.generator.next_time(self.now)
