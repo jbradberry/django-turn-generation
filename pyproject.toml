@@ -8,12 +8,20 @@ authors = [
 description = "A Django app for specifying the timing of and triggering turn generation for turn-based strategy games."
 readme = "README.rst"
 license = "MIT"
+dependencies = [
+  "djangorestframework",
+  "Celery>=5.2",
+  "python-dateutil",
+  "pytz",
+]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 
 [build-system]
